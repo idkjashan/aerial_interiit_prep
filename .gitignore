@@ -1,0 +1,26 @@
+# ROS 2 build directories
+install/
+build/
+log/
+
+# Python
+__pycache__/
+*.py[cod]
+*$py.class
+*.so
+.Python
+env/
+venv/
+.venv/
+
+# IDE & Editor files
+.vscode/
+.idea/
+*.swp
+*~
+.DS_Store
+
+# Gazebo & Sim logs
+*.log
+*.bag
+*.db3
