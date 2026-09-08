@@ -4,7 +4,7 @@
 `~/px4_ros_ws`, ROS 2 Humble, Gazebo Harmonic 8.12, PX4 v1.16.0-rc1, branch `drdo_depth_down`).
 
 **Status of this repo:** the VO algorithm, the frame maths and the ROS 2 nodes in
-`PART_1/src/uav_vision/` are **written and already validated offline** against a synthetic
+`src/uav_vision/` are **written and already validated offline** against a synthetic
 ground-truth simulator. 45 unit tests pass. Your job is integration on real Gazebo/PX4,
 not green-field authoring. Do not rewrite the core; extend and tune it.
 
@@ -85,7 +85,7 @@ This is pinned by `test_homography_translation_is_exact_and_scale_invariant`.
 
 ### Measured performance (offline, exact ground truth)
 
-Reproduce with `cd PART_1/tools && PYTHONPATH=../src/uav_vision python3 validate_vo.py --suite full`
+Reproduce with `cd tools && PYTHONPATH=../src/uav_vision python3 validate_vo.py --suite full`
 
 | Scenario | Max horiz error | Velocity RMSE | p95 latency | Verdict |
 |---|---|---|---|---|
@@ -144,7 +144,7 @@ Measured on the stock grey `ground_plane`: `goodFeaturesToTrack` returns **0 cor
 texture: **500**. There is no tuning that rescues an untextured plane.
 
 ```bash
-cd ~/aerial_interiit_prep/PART_1/tools
+cd ~/aerial_interiit_prep/tools
 python3 make_ground_texture.py --out ground_albedo.png --px 4096 --tiles 24
 
 M=~/PX4-Autopilot/Tools/simulation/gz/models/textured_ground
@@ -179,7 +179,7 @@ and confirm visible ground detail.
 
 ```bash
 # in the pxh> shell
-param load /home/jashan/aerial_interiit_prep/PART_1/tools/px4_gps_denied.params
+param load /home/jashan/aerial_interiit_prep/tools/px4_gps_denied.params
 param save
 reboot          # EKF2_HGT_REF, EKF2_EV_DELAY and SYS_HAS_GPS are reboot-required
 ```
@@ -221,7 +221,7 @@ automatically when present and warns when it is not.
 ## 5. Stage 3 — build and validate offline (no Gazebo needed)
 
 ```bash
-cd ~/aerial_interiit_prep/PART_1
+cd ~/aerial_interiit_prep
 colcon build --symlink-install --packages-select uav_vision
 source install/setup.bash
 python3 -m pytest src/uav_vision/test -q                       # expect 45 passed
@@ -236,7 +236,7 @@ and it is where both real bugs were caught during development.
 ## 6. Stage 4 — bring up and verify each link
 
 ```bash
-cd ~/aerial_interiit_prep/PART_1/tools
+cd ~/aerial_interiit_prep/tools
 ./run_sim.sh --no-mission     # perception only, no arming
 ./check_stack.sh              # in another terminal
 ```
@@ -359,7 +359,11 @@ Each has an offline counterpart already measured, so you can show sim-vs-model a
 - [ ] Vision pipeline latency < 60 ms, measured
 - [ ] rosbag + plots + video
 
-**Deliverable:** `PART_1/` with modified files, this plan, the README, logs, flowcharts, video.
+**Deliverable.** This repository IS the workspace: cloning it into `~/aerial_interiit_prep`
+gives you a directory you can `colcon build` straight away. The PS submission format,
+however, asks for a zip containing `PART_1/` and `PART_2/` folders -- so at submission time,
+copy this tree into a `PART_1/` directory alongside `PART_2/`, keeping the README, this plan,
+logs, flowcharts and the video with it.
 
 ---
 

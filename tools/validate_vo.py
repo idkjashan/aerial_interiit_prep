@@ -8,7 +8,7 @@ and reports it against the PS Phase-2 gate (inside 1.5 m for 90 s).
     python3 validate_vo.py                # nominal 90 s run
     python3 validate_vo.py --suite full   # + lighting / blur / low texture / dropout
 
-Requires only numpy + opencv-python. Add PART_1/src/uav_vision to PYTHONPATH:
+Requires only numpy + opencv-python. Add src/uav_vision to PYTHONPATH:
     PYTHONPATH=../src/uav_vision python3 validate_vo.py
 """
 import argparse, time, sys

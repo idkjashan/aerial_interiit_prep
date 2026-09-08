@@ -27,4 +27,7 @@ venv/
 
 # Validation harness byproducts
 *.png
-!PART_1/docs/*.png
+!docs/*.png
+
+# pytest
+.pytest_cache/

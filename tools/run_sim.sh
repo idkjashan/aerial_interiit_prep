@@ -6,7 +6,7 @@
 set -uo pipefail
 
 PX4_DIR="${PX4_DIR:-$HOME/PX4-Autopilot}"
-WS_DIR="${WS_DIR:-$HOME/aerial_interiit_prep/PART_1}"
+WS_DIR="${WS_DIR:-$HOME/aerial_interiit_prep}"
 PX4_WS="${PX4_WS:-$HOME/px4_ros_ws}"
 WORLD="${WORLD:-default}"
 MODEL="${MODEL:-x500_depth_down}"

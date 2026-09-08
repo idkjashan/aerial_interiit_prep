@@ -70,6 +70,6 @@ which is exactly what they were built for.
 ## Reproduce
 
 ```bash
-cd PART_1 && python3 -m pytest src/uav_vision/test -q          # 45 passed
+python3 -m pytest src/uav_vision/test -q          # 45 passed
 cd tools && PYTHONPATH=../src/uav_vision python3 validate_vo.py --suite full
 ```

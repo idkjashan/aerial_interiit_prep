@@ -1,4 +1,4 @@
-"""Regression tests for the VO core. Run with: pytest -q PART_1/src/uav_vision/test
+"""Regression tests for the VO core. Run with: pytest -q src/uav_vision/test
 
 These are the tests that caught the two real bugs during development:
   * the homography decomposition halving the translation, and
