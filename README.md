@@ -27,6 +27,33 @@ This file includes:
 
 ---
 
+## 📦 Part 1 — Implemented and validated
+
+The Part 1 solution (GPS-denied visual odometry → EKF2 → 90 s vision-only position hold) is
+implemented in **[`PART_1/`](PART_1/)**:
+
+- **[`PART_1/IMPLEMENTATION_PLAN.md`](PART_1/IMPLEMENTATION_PLAN.md)** — step-by-step integration
+  guide for the Ubuntu machine, a verified PX4 v1.16 parameter reference, and a troubleshooting
+  matrix. **Start here.**
+- **[`PART_1/README.md`](PART_1/README.md)** — approach, measured results, requirement traceability.
+- **[`PART_1/docs/VALIDATION.md`](PART_1/docs/VALIDATION.md)** — how the numbers were produced.
+- `PART_1/src/uav_vision/` — four ROS 2 nodes plus a ROS-free VO core (45 unit tests).
+- `PART_1/tools/` — offline validation harness, ground-texture generator, PX4 params, bringup.
+
+Measured offline against exact ground truth: **0.234 m max horizontal error over a 90 s hover
+at 10 m** (gate: 1.5 m) at **5.9 ms p95 latency** (gate: 60 ms), with graceful degradation and
+automatic recovery from total vision loss.
+
+> ⚠️ Two findings that override this file:
+> 1. **Every stock Gazebo world has an untextured ground plane** — measured **0** trackable
+>    corners versus **500** with texture. VO cannot work until this is fixed.
+> 2. **Several values in `SYSTEM_ENVIRONMENT.md` below are wrong** (external-vision lever-arm
+>    signs, `EKF2_EV_CTRL=11` silently excluding velocity, RGB FOV, and the assumption that
+>    airframe 4022 is upstream). Corrections with sources are in
+>    [`PART_1/IMPLEMENTATION_PLAN.md` §0](PART_1/IMPLEMENTATION_PLAN.md).
+
+---
+
 ## 🤖 Workflow with WSL High-Reasoning AI Model
 1. **Pass [`SYSTEM_ENVIRONMENT.md`](SYSTEM_ENVIRONMENT.md)** to your high-reasoning model in WSL.
 2. Have the model draft the implementation plan, node architecture, and ROS 2 packages adhering strictly to the documented topic names, message structures, and frame conventions.

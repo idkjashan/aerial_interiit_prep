@@ -1,0 +1,44 @@
+<!-- Drop-in replacement for the untextured ground_plane in a PX4 gz world.
+
+     Install as a model so `model://` resolves:
+       $PX4_DIR/Tools/simulation/gz/models/textured_ground/
+         model.config
+         model.sdf                 <- this file, wrapped in <sdf><model>...</model></sdf>
+         materials/textures/ground_albedo.png   <- from tools/make_ground_texture.py
+
+     PX4's build already appends that models dir to GZ_SIM_RESOURCE_PATH
+     (src/modules/simulation/gz_bridge/gz_env.sh.in), so no extra env setup is needed.
+
+     Notes that cost real debugging time:
+       * albedo_map MUST use a model:// URI. Relative paths do not resolve
+         (gazebosim/gz-sim#286).
+       * Use a thin <box>, not a <plane>. A plane's single 0-1 UV rectangle stretches one
+         copy of the image across the whole surface; the tiling is baked into the PNG
+         instead, sized to the area actually flown over.
+       * 120 m x 120 m at 4096 px is ~3 cm/texel. At 10 m altitude with fx ~ 430 px the
+         camera samples ~2.3 cm/px, so this is fine; go larger if you fly higher. -->
+<model name="textured_ground">
+  <static>true</static>
+  <link name="link">
+    <collision name="collision">
+      <geometry><box><size>120 120 0.1</size></box></geometry>
+      <surface><friction><ode><mu>1.0</mu><mu2>1.0</mu2></ode></friction></surface>
+    </collision>
+    <visual name="visual">
+      <geometry><box><size>120 120 0.1</size></box></geometry>
+      <material>
+        <ambient>0.7 0.7 0.7 1</ambient>
+        <diffuse>0.9 0.9 0.9 1</diffuse>
+        <specular>0.1 0.1 0.1 1</specular>
+        <pbr>
+          <metal>
+            <albedo_map>model://textured_ground/materials/textures/ground_albedo.png</albedo_map>
+            <roughness>0.9</roughness>
+            <metalness>0.0</metalness>
+          </metal>
+        </pbr>
+      </material>
+    </visual>
+  </link>
+  <pose>0 0 -0.05 0 0 0</pose>
+</model>

@@ -1,0 +1,56 @@
+# PX4 v1.16 parameters for GPS-denied flight fused from external vision.
+# Load in the pxh> shell with:   param load /path/to/px4_gps_denied.params
+# then:                          param save   &&   reboot
+# Parameters marked REBOOT below only take effect after that reboot.
+#
+# Verified against PX4-Autopilot v1.16.0 sources:
+#   src/modules/ekf2/params_external_vision.yaml, params_gnss.yaml, module.yaml
+#   src/modules/commander/commander_params.c, src/lib/systemlib/system_params.c
+
+# --- stop using GPS -----------------------------------------------------------
+# In Gazebo the model's navsat sensor keeps publishing regardless (GZBridge.cpp
+# subscribes unconditionally and there is NO PX4_SIM_GPS_DENIED env var in v1.16),
+# so GPS is disabled at the CONSUMER side. That is the real "GPS denied" switch.
+SYS_HAS_GPS      0        # REBOOT. sensor hub stops processing sensor_gps
+EKF2_GPS_CTRL    0        # bitmask 0: no lon/lat, no altitude, no velocity, no heading
+
+# --- height reference ---------------------------------------------------------
+# Default is 1 (GPS). With GPS gone that starves the height reference, which shows up
+# as "EKF2 ignores my vision" -- one of the most common failure reports.
+EKF2_HGT_REF     3        # REBOOT. 3 = Vision
+EKF2_BARO_CTRL   1        # keep baro fused as a secondary source; harmless and stabilising
+
+# --- external vision fusion ---------------------------------------------------
+# bit0 horiz pos (1) + bit1 vert pos (2) + bit2 3D velocity (4) = 7.
+# Add bit3 (8) for yaw ONLY if you also set EKF2_MAG_TYPE 5 and publish a real
+# quaternion; otherwise the magnetometer already provides heading.
+EKF2_EV_CTRL     7
+EKF2_EV_DELAY    50.0     # REBOOT. ms. Set to the MEASURED pipeline latency, since the
+                          # bridge sends timestamp=0 and PX4 stamps on arrival.
+EKF2_EV_NOISE_MD 0        # 0: message variance used, EKF2_EVx_NOISE as a LOWER bound
+EKF2_EVP_NOISE   0.05     # m     (default 0.1)
+EKF2_EVV_NOISE   0.10     # m/s   (default 0.1)
+EKF2_EVA_NOISE   0.10     # rad
+EKF2_EVP_GATE    5.0      # SD, innovation consistency gate for EV position
+EKF2_EVV_GATE    3.0      # SD, EV velocity
+EKF2_EV_QMIN     0        # raise to auto-reject low-confidence frames via msg.quality
+
+# --- sensor lever arm ---------------------------------------------------------
+# FRD, metres, from the vehicle CG. The SDF pose is in FLU ([0.12, 0.03, 0.242]),
+# so Y and Z change sign when expressed in PX4's FRD body frame. Re-derive these
+# from your own model.sdf rather than copying blindly.
+EKF2_EV_POS_X    0.12
+EKF2_EV_POS_Y   -0.03
+EKF2_EV_POS_Z   -0.242
+
+# --- failsafes that would otherwise fire during a bench test ------------------
+COM_RCL_EXCEPT   4        # bit2 = OFFBOARD exempt from RC-loss failsafe (no RC in SITL)
+NAV_DLL_ACT      0        # no action on data-link loss
+NAV_RCL_ACT      0        # no action on RC loss
+COM_ARM_WO_GPS   1        # warning only (default). Skipped entirely when SYS_HAS_GPS=0.
+
+# --- failsafe thresholds we deliberately keep at default ----------------------
+# The PS asks us to keep innovations BELOW the failsafe limits, so do NOT relax these.
+# Left here as documentation of what we are being measured against:
+# COM_POS_FS_EPH 5.0      # m,   horizontal position error that triggers failsafe
+# COM_VEL_FS_EVH 1.0      # m/s, horizontal velocity error that triggers failsafe
