@@ -1,0 +1,46 @@
+# Tuning for the downward RGB-D VO stack. Values marked (validated) were measured on the
+# synthetic ground-truth harness in tools/ -- see docs/VALIDATION.md.
+/**/uav_visual_odometry:
+  ros__parameters:
+    rgb_topic: /uav/rgb
+    depth_topic: /uav/depth
+    rgb_info_topic: /uav/camera_info
+    depth_info_topic: /uav/depth/camera_info
+    px4_durability: volatile        # match `ros2 topic info /fmu/out/vehicle_attitude -v`
+    sync_slop: 0.035                # RGB/depth ApproximateTime tolerance, s
+    camera_link_rpy: [0.0, 1.5707963, 0.0]   # from the SDF <pose> of the camera link
+    rgb_hfov_fallback: 1.204        # only used if camera_info never arrives
+    depth_hfov_fallback: 1.274
+    max_corners: 500
+    min_features: 60                # below this the frame is not trusted
+    degraded_features: 120          # below this we report DEGRADED
+    rekey_shift: 0.35               # re-key once the view shifts 35% of frame width
+    clahe_clip: 2.0                 # (validated) cuts lighting-induced error 0.97 -> 0.39 m
+    vel_lpf_alpha: 0.6
+
+/**/uav_px4_odometry_bridge:
+  ros__parameters:
+    publish_rate: 30.0              # PS asks 20-30 Hz; EKF2 hard floor is 5 Hz
+    stamp_mode: zero                # PX4 stamps on arrival -> no clock-domain risk
+    fuse_yaw: false                 # leave the magnetometer as the heading source
+    min_quality_to_publish: 1
+    max_age_s: 0.25
+    pos_var_floor: 0.02
+    vel_var_floor: 0.05
+
+/**/uav_vision_health:
+  ros__parameters:
+    eph_limit: 5.0                  # COM_POS_FS_EPH default
+    evh_limit: 1.0                  # COM_VEL_FS_EVH default
+    min_quality_for_arm: 40
+    stable_seconds_for_arm: 3.0
+    subscribe_estimator_status: true
+
+/**/uav_offboard_mission:
+  ros__parameters:
+    takeoff_altitude: 10.0          # PS Phase 2
+    hold_seconds: 90.0              # PS Phase 2
+    setpoint_rate: 20.0
+    arrival_radius: 0.5
+    land_at_end: true
+    require_health: true

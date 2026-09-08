@@ -24,3 +24,7 @@ venv/
 *.log
 *.bag
 *.db3
+
+# Validation harness byproducts
+*.png
+!PART_1/docs/*.png
