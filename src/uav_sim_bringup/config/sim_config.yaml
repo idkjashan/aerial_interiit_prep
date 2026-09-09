@@ -1,0 +1,9 @@
+# Configuration parameters for UAV simulation bringup and testing
+uav_sim_bringup:
+  ros__parameters:
+    default_world: vo_ground
+    default_model: x500_depth_down
+    default_instance_name: x500_depth_down_0
+    px4_dir: /home/jashan/PX4-Autopilot
+    spawn_timeout_s: 30.0
+    dds_port: 8888

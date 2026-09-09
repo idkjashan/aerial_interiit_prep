@@ -262,6 +262,9 @@ class DownwardVO:
             v_new = R_wc @ V_cam
             a = self.p.vel_lpf_alpha
             self.vel = a * v_new + (1.0 - a) * self.vel
+        else:
+            # Smoothly decay velocity towards zero during flow tracking dropout
+            self.vel = 0.85 * self.vel
 
         # ---- keyframe registration: absolute, drift-free position ----------
         mode = 'dead_reckoning'
@@ -279,13 +282,19 @@ class DownwardVO:
                     self.pos = self.kf_pos + R_wc_kf @ delta_cam
                     self.n_kf_inliers = int(mask.sum())
                     mode = 'keyframe'
+                    self.consecutive_dr = 0
                     shift = np.linalg.norm(delta_cam[:2]) / max(alt_agl, 1e-3)
-                    if shift > self.p.rekey_shift or self.n_kf_inliers < self.p.min_features:
+                    # Only rekey when the drone has genuinely translated AND the frame has rich inliers
+                    if shift > self.p.rekey_shift and self.n_kf_inliers >= self.p.degraded_features:
                         self._set_keyframe(g, rpy, alt_agl)
 
         if mode != 'keyframe':                              # anchor lost -> integrate
             self.pos = self.pos + self.vel * dt
-            self._set_keyframe(g, rpy, alt_agl)
+            self.consecutive_dr = getattr(self, 'consecutive_dr', 0) + 1
+            # Only force re-key after extended dead-reckoning AND when current frame is high quality
+            if self.consecutive_dr > 60 and self.n_tracked >= self.p.degraded_features:
+                self._set_keyframe(g, rpy, alt_agl)
+                self.consecutive_dr = 0
 
         if np.isfinite(alt_agl):
             self.pos[2] = alt_agl                           # absolute height, no drift

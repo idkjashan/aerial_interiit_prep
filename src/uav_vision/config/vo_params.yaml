@@ -7,7 +7,7 @@
     rgb_info_topic: /uav/camera_info
     depth_info_topic: /uav/depth/camera_info
     px4_durability: volatile        # match `ros2 topic info /fmu/out/vehicle_attitude -v`
-    sync_slop: 0.035                # RGB/depth ApproximateTime tolerance, s
+    sync_slop: 0.085                # RGB/depth ApproximateTime tolerance, s (prevents dropped frames)
     camera_link_rpy: [0.0, 1.5707963, 0.0]   # from the SDF <pose> of the camera link
     rgb_hfov_fallback: 1.204        # only used if camera_info never arrives
     depth_hfov_fallback: 1.274

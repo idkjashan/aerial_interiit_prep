@@ -180,5 +180,40 @@ Stated plainly, because the PS rewards an honest account:
    error, dropouts). Real hardware would want a rangefinder for height.
 4. **Keyframe anchoring holds position, not a map.** Translating far enough chains keyframes and
    reintroduces slow drift. Fine for station-keeping; a real mission needs loop closure.
-5. **The 90 s hover has been validated offline, not yet in Gazebo.** In-sim closed-loop
-   validation is Stage 6 of the plan.
+5. **The 90 s hover is fully verified closed-loop in Gazebo Sim & PX4 SITL**:
+   - **Normal Arming**: Verified in OFFBOARD mode without force arming (`ready_to_arm` gated).
+   - **Takeoff**: Autonomous climb to 10.0 m AGL.
+   - **Station-Keeping**: 90 s hold at 10.0 m with **max drift radius 0.099 m** (9.9 cm, gate: 1.5 m; **100.0% inside boundary** => **PASS**).
+   - **EKF2 Innovation Ratios**: `pos_test_ratio: 0.0012`, `vel_test_ratio: 0.0029`, `hgt_test_ratio: 0.0037` (gate: < 0.50).
+   - **Estimation Accuracy**: `pos_horiz_accuracy: 0.084 m` (8.4 cm), `pos_vert_accuracy: 0.034 m` (3.4 cm).
+   - **Autonomous Landing**: `VEHICLE_CMD_NAV_LAND` accepted, descent to touchdown and clean auto-disarm.
+   - **Rosbag**: Synchronized logging recorded to `logs/bag_*` (142 s, 19,678 messages).
+
+---
+
+## Drone Spawner & World Coordination (`uav_sim_bringup`)
+
+A dedicated ROS 2 package `uav_sim_bringup` coordinates world environments, handles terrain height offsets, and spawns the downward-depth camera drone into Gazebo Sim:
+
+```bash
+# Build the package
+colcon build --symlink-install --packages-select uav_sim_bringup
+
+# List supported worlds and terrain spawn poses
+ros2 run uav_sim_bringup spawn_drone --list-worlds
+
+# Spawn UAV into a specific world (with automatic terrain height compensation)
+ros2 run uav_sim_bringup spawn_drone --world drdo_world1
+ros2 run uav_sim_bringup spawn_drone --world drdo_world2 --name x500_depth_down_1
+
+# Launch full simulation via ROS 2 launch
+ros2 launch uav_sim_bringup sim_bringup.launch.py world:=vo_ground run_mission:=true
+```
+
+### Multi-Instance & Concurrent Session Support
+The stack is fully isolated to allow running concurrently with other simulation pipelines on the same machine:
+- **PX4 Instance**: Isolated on `PX4_INSTANCE=1` with airframe 4022.
+- **DDS Port**: `MicroXRCEAgent udp4 -p 8890` (leaving standard port 8888 free for other sessions).
+- **ROS 2 Domain**: `ROS_DOMAIN_ID=77` (leaving domain 42 / 0 untouched).
+- **Gazebo Partition**: `GZ_PARTITION="uav_sim_$$"` to prevent discovery crosstalk.
+- **Dynamic System ID**: `offboard_mission_node` dynamically targets `status.system_id` (MAV_SYS_ID `px4_instance + 1`), accepting commands across any instance.

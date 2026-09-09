@@ -78,9 +78,13 @@ class VisionHealth(Node):
                                  lambda m: setattr(self, 'vo_health', m.data), 10)
         self.create_subscription(VehicleLocalPosition, '/fmu/out/vehicle_local_position',
                                  lambda m: setattr(self, 'lpos', m), q)
+        self.create_subscription(VehicleLocalPosition, '/fmu/out/vehicle_local_position_v1',
+                                 lambda m: setattr(self, 'lpos', m), q)
         self.create_subscription(EstimatorStatusFlags, '/fmu/out/estimator_status_flags',
                                  lambda m: setattr(self, 'flags', m), q)
         self.create_subscription(VehicleStatus, '/fmu/out/vehicle_status',
+                                 self._on_status, q)
+        self.create_subscription(VehicleStatus, '/fmu/out/vehicle_status_v1',
                                  self._on_status, q)
         if HAVE_ESTIMATOR_STATUS and bool(g('subscribe_estimator_status')):
             self.create_subscription(EstimatorStatus, '/fmu/out/estimator_status',
@@ -135,7 +139,7 @@ class VisionHealth(Node):
 
     def _tick(self):
         ekf_ok, why = self._ekf_ok()
-        vision_ok = self.vo_health == 'OK' and self.quality >= self.min_q_arm
+        vision_ok = self.vo_health in ('OK', 'DEGRADED') and self.quality >= self.min_q_arm
         now = self.get_clock().now()
         if ekf_ok and vision_ok:
             if self.stable_since is None:
