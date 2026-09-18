@@ -21,11 +21,8 @@ venv/
 # the problem statement PDF stays local
 *.pdf
 
-# raw run output stays out of git (size); figures, summary tables and CSVs in
-# PART_*/logs are committed, the raw .ulg files and rosbags go into the submission zip
-*.log
-*.ulg
-PART_1/logs/bag_*/
+# raw root scratch logs stay out of git
+/logs/
 
 # notes for coding agents, kept local
 .agent/

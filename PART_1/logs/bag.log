@@ -1,0 +1,19 @@
+stdin is not a terminal device. Keyboard handling disabled.[INFO] [1789753490.462515130] [rosbag2_recorder]: Press SPACE for pausing/resuming
+[INFO] [1789753490.463556271] [rosbag2_storage]: Opened database '/home/jashan/aerial_interiit_prep/PART_1/logs/bag_20260918_231449/bag_20260918_231449_0.db3' for READ_WRITE.
+[INFO] [1789753490.464144928] [rosbag2_recorder]: Listening for topics...
+[INFO] [1789753490.464163536] [rosbag2_recorder]: Event publisher thread: Starting
+[INFO] [1789753490.465863687] [rosbag2_recorder]: Subscribed to topic '/uav_visual_odometry/odom'
+[INFO] [1789753490.466420641] [rosbag2_recorder]: Subscribed to topic '/uav_visual_odometry/health'
+[INFO] [1789753490.466864509] [rosbag2_recorder]: Subscribed to topic '/uav_visual_odometry/agl'
+[INFO] [1789753490.468159460] [rosbag2_recorder]: Subscribed to topic '/uav_vision_health/status'
+[INFO] [1789753490.470474294] [rosbag2_recorder]: Subscribed to topic '/fmu/out/vehicle_local_position_v1'
+[INFO] [1789753490.471363001] [rosbag2_recorder]: Subscribed to topic '/fmu/out/estimator_status_flags'
+[INFO] [1789753490.471904734] [rosbag2_recorder]: Subscribed to topic '/uav_visual_odometry/quality'
+[INFO] [1789753490.472590600] [rosbag2_recorder]: Subscribed to topic '/fmu/out/estimator_status'
+[INFO] [1789753490.473253777] [rosbag2_recorder]: Subscribed to topic '/fmu/out/vehicle_status_v1'
+[INFO] [1789753490.473866123] [rosbag2_recorder]: Subscribed to topic '/fmu/in/vehicle_visual_odometry'
+[INFO] [1789753490.474379259] [rosbag2_recorder]: Subscribed to topic '/diagnostics'
+[INFO] [1789753490.474468453] [rosbag2_recorder]: Recording...
+[INFO] [1789753504.698539023] [rosbag2_cpp]: Writing remaining messages from cache to the bag. It may take a while
+[INFO] [1789753504.700373669] [rosbag2_recorder]: Event publisher thread: Exiting
+[INFO] [1789753504.700498755] [rosbag2_recorder]: Recording stopped

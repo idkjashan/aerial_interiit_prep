@@ -14,5 +14,5 @@ logs/
 ```
 
 PX4 writes the .ulg to `PX4-Autopilot/build/px4_sitl_default/rootfs/log/<date>/`; copy the
-one for each run in here. The figures, `summary.md` tables and CSVs are in git; the .ulg
-files are left out of git because of their size and go into the submission zip.
+one for each run in here. The figures, `summary.md` tables, CSVs, and flight `.ulg` logs
+are tracked for verification and submission.

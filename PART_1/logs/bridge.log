@@ -1,0 +1,5 @@
+[INFO] [1789763214.924102612] [ros_gz_bridge]: Creating GZ->ROS Bridge: [/world/vo_ground/model/x500_depth_down_1/link/camera_link/sensor/IMX214/image (gz.msgs.Image) -> /world/vo_ground/model/x500_depth_down_1/link/camera_link/sensor/IMX214/image (sensor_msgs/msg/Image)] (Lazy 0)
+[INFO] [1789763214.925541474] [ros_gz_bridge]: Creating GZ->ROS Bridge: [/world/vo_ground/model/x500_depth_down_1/link/camera_link/sensor/IMX214/camera_info (gz.msgs.CameraInfo) -> /world/vo_ground/model/x500_depth_down_1/link/camera_link/sensor/IMX214/camera_info (sensor_msgs/msg/CameraInfo)] (Lazy 0)
+[INFO] [1789763214.926171600] [ros_gz_bridge]: Creating GZ->ROS Bridge: [/depth_camera (gz.msgs.Image) -> /depth_camera (sensor_msgs/msg/Image)] (Lazy 0)
+[INFO] [1789763214.926641277] [ros_gz_bridge]: Creating GZ->ROS Bridge: [/depth_camera/points (gz.msgs.PointCloudPacked) -> /depth_camera/points (sensor_msgs/msg/PointCloud2)] (Lazy 0)
+[INFO] [1789763274.882964040] [rclcpp]: signal_handler(signum=2)

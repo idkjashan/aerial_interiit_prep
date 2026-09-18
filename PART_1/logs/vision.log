@@ -1,0 +1,150 @@
+[INFO] [launch]: All log files can be found below /home/jashan/.ros/log/2026-09-19-01-56-56-149545-LOQ-79110
+[INFO] [launch]: Default logging verbosity is set to INFO
+[INFO] [vo_node-1]: process started with pid [79112]
+[INFO] [px4_odometry_bridge-2]: process started with pid [79114]
+[INFO] [vision_health_node-3]: process started with pid [79116]
+[px4_odometry_bridge-2] [INFO] [1789763216.633220199] [uav_px4_odometry_bridge]: PX4 EV bridge up: 30 Hz, stamp_mode=zero, fuse_yaw=False
+[px4_odometry_bridge-2] [INFO] [1789763216.634677344] [uav_px4_odometry_bridge]: EV published=0 skipped=1 quality=0 health=LOST resets=0
+[px4_odometry_bridge-2] [WARN] [1789763216.635215238] [uav_px4_odometry_bridge]: no EV messages sent -- EKF2 needs >=5 Hz to start fusion. Check that the VO node is publishing odom and quality > 0.
+[vo_node-1] [INFO] [1789763216.827200248] [uav_visual_odometry]: visual odometry node up; waiting for camera_info + attitude
+[vo_node-1] [INFO] [1789763216.828490685] [uav_visual_odometry]: RGB intrinsics: fx=960.76 cx=960.00 (1920x1080)
+[vo_node-1] [WARN] [1789763216.829045065] [uav_visual_odometry]: no synchronised RGB+depth frames yet -- check the ros_gz_bridge topics and that /fmu/out/vehicle_attitude is arriving (QoS!)
+[vo_node-1] [WARN] [1789763217.096633293] [uav_visual_odometry]: no depth camera_info; using SDF-FOV fallback intrinsics
+[vo_node-1] [INFO] [1789763217.097548766] [uav_visual_odometry]: VO initialised
+[vo_node-1] [INFO] [1789763217.597894578] [uav_visual_odometry]: frames=5 feat=95 health=DEGRADED latency=0.0 ms
+[vo_node-1] [INFO] [1789763218.614795039] [uav_visual_odometry]: frames=7 feat=95 health=DEGRADED latency=0.0 ms
+[px4_odometry_bridge-2] [INFO] [1789763218.615442365] [uav_px4_odometry_bridge]: EV published=38 skipped=20 quality=79 health=DEGRADED resets=0
+[vo_node-1] [INFO] [1789763219.663642135] [uav_visual_odometry]: frames=13 feat=95 health=DEGRADED latency=0.0 ms
+[vo_node-1] [INFO] [1789763220.682703276] [uav_visual_odometry]: frames=3 feat=95 health=DEGRADED latency=0.0 ms
+[px4_odometry_bridge-2] [INFO] [1789763220.683056632] [uav_px4_odometry_bridge]: EV published=40 skipped=20 quality=79 health=DEGRADED resets=0
+[vo_node-1] [INFO] [1789763221.733691194] [uav_visual_odometry]: frames=9 feat=95 health=DEGRADED latency=0.0 ms
+[px4_odometry_bridge-2] [INFO] [1789763222.836835130] [uav_px4_odometry_bridge]: EV published=54 skipped=6 quality=79 health=DEGRADED resets=0
+[vo_node-1] [INFO] [1789763222.851235975] [uav_visual_odometry]: frames=12 feat=95 health=DEGRADED latency=0.0 ms
+[vo_node-1] [INFO] [1789763223.888473326] [uav_visual_odometry]: frames=10 feat=95 health=DEGRADED latency=0.0 ms
+[px4_odometry_bridge-2] [INFO] [1789763224.918787850] [uav_px4_odometry_bridge]: EV published=57 skipped=3 quality=79 health=DEGRADED resets=0
+[vo_node-1] [INFO] [1789763224.918903891] [uav_visual_odometry]: frames=8 feat=95 health=DEGRADED latency=0.0 ms
+[vo_node-1] [INFO] [1789763225.952754071] [uav_visual_odometry]: frames=9 feat=95 health=DEGRADED latency=0.0 ms
+[vo_node-1] [INFO] [1789763227.010222835] [uav_visual_odometry]: frames=9 feat=95 health=DEGRADED latency=0.0 ms
+[px4_odometry_bridge-2] [INFO] [1789763227.010901440] [uav_px4_odometry_bridge]: EV published=55 skipped=5 quality=79 health=DEGRADED resets=0
+[vo_node-1] [INFO] [1789763228.048098163] [uav_visual_odometry]: frames=14 feat=95 health=DEGRADED latency=0.0 ms
+[px4_odometry_bridge-2] [INFO] [1789763229.118650652] [uav_px4_odometry_bridge]: EV published=49 skipped=11 quality=0 health=LOST resets=0
+[vo_node-1] [INFO] [1789763229.137418411] [uav_visual_odometry]: frames=8 feat=95 health=DEGRADED latency=0.0 ms
+[vo_node-1] [INFO] [1789763230.195847275] [uav_visual_odometry]: frames=9 feat=80 health=DEGRADED latency=0.0 ms
+[vo_node-1] [INFO] [1789763231.318721074] [uav_visual_odometry]: frames=16 feat=75 health=DEGRADED latency=0.0 ms
+[px4_odometry_bridge-2] [INFO] [1789763231.319342335] [uav_px4_odometry_bridge]: EV published=58 skipped=2 quality=62 health=DEGRADED resets=0
+[vo_node-1] [INFO] [1789763232.334040937] [uav_visual_odometry]: frames=8 feat=74 health=DEGRADED latency=0.0 ms
+[vo_node-1] [INFO] [1789763233.392347064] [uav_visual_odometry]: frames=8 feat=49 health=DEGRADED latency=0.0 ms
+[px4_odometry_bridge-2] [INFO] [1789763233.393171138] [uav_px4_odometry_bridge]: EV published=59 skipped=1 quality=40 health=DEGRADED resets=0
+[vo_node-1] [INFO] [1789763234.512667909] [uav_visual_odometry]: frames=7 feat=36 health=DEGRADED latency=0.0 ms
+[px4_odometry_bridge-2] [INFO] [1789763235.575864685] [uav_px4_odometry_bridge]: EV published=45 skipped=15 quality=100 health=DEGRADED resets=0
+[vo_node-1] [INFO] [1789763235.575888074] [uav_visual_odometry]: frames=6 feat=324 health=DEGRADED latency=0.0 ms
+[vo_node-1] [INFO] [1789763236.628230574] [uav_visual_odometry]: frames=8 feat=150 health=DEGRADED latency=0.0 ms
+[vo_node-1] [INFO] [1789763237.697481066] [uav_visual_odometry]: frames=8 feat=147 health=DEGRADED latency=0.0 ms
+[px4_odometry_bridge-2] [INFO] [1789763237.697599007] [uav_px4_odometry_bridge]: EV published=54 skipped=6 quality=100 health=DEGRADED resets=0
+[vo_node-1] [INFO] [1789763238.721300726] [uav_visual_odometry]: frames=8 feat=145 health=DEGRADED latency=0.0 ms
+[vo_node-1] [INFO] [1789763239.819044295] [uav_visual_odometry]: frames=12 feat=145 health=DEGRADED latency=0.0 ms
+[px4_odometry_bridge-2] [INFO] [1789763239.819610397] [uav_px4_odometry_bridge]: EV published=60 skipped=0 quality=100 health=DEGRADED resets=0
+[vo_node-1] [INFO] [1789763240.907024814] [uav_visual_odometry]: frames=12 feat=145 health=DEGRADED latency=0.0 ms
+[vo_node-1] [INFO] [1789763242.037227724] [uav_visual_odometry]: frames=12 feat=145 health=OK latency=0.0 ms
+[px4_odometry_bridge-2] [INFO] [1789763242.037667813] [uav_px4_odometry_bridge]: EV published=60 skipped=0 quality=100 health=OK resets=0
+[vo_node-1] [INFO] [1789763243.108555460] [uav_visual_odometry]: frames=9 feat=145 health=OK latency=0.0 ms
+[px4_odometry_bridge-2] [INFO] [1789763244.214811342] [uav_px4_odometry_bridge]: EV published=57 skipped=3 quality=100 health=OK resets=0
+[vo_node-1] [INFO] [1789763244.214821908] [uav_visual_odometry]: frames=9 feat=145 health=OK latency=0.0 ms
+[vo_node-1] [INFO] [1789763245.321444156] [uav_visual_odometry]: frames=7 feat=145 health=OK latency=0.0 ms
+[vo_node-1] [INFO] [1789763246.379736949] [uav_visual_odometry]: frames=10 feat=145 health=OK latency=0.0 ms
+[px4_odometry_bridge-2] [INFO] [1789763246.380130908] [uav_px4_odometry_bridge]: EV published=51 skipped=9 quality=100 health=OK resets=0
+[vo_node-1] [INFO] [1789763247.496960034] [uav_visual_odometry]: frames=0 feat=145 health=LOST latency=0.0 ms
+[vo_node-1] [INFO] [1789763248.623884849] [uav_visual_odometry]: frames=0 feat=145 health=LOST latency=0.0 ms
+[px4_odometry_bridge-2] [INFO] [1789763248.624160070] [uav_px4_odometry_bridge]: EV published=0 skipped=60 quality=0 health=LOST resets=0
+[px4_odometry_bridge-2] [WARN] [1789763248.624479086] [uav_px4_odometry_bridge]: no EV messages sent -- EKF2 needs >=5 Hz to start fusion. Check that the VO node is publishing odom and quality > 0.
+[vo_node-1] [INFO] [1789763249.767689544] [uav_visual_odometry]: frames=0 feat=145 health=LOST latency=0.0 ms
+[vo_node-1] [INFO] [1789763250.877341052] [uav_visual_odometry]: frames=0 feat=145 health=LOST latency=0.0 ms
+[px4_odometry_bridge-2] [INFO] [1789763250.878031617] [uav_px4_odometry_bridge]: EV published=0 skipped=60 quality=0 health=LOST resets=0
+[px4_odometry_bridge-2] [WARN] [1789763250.879168688] [uav_px4_odometry_bridge]: no EV messages sent -- EKF2 needs >=5 Hz to start fusion. Check that the VO node is publishing odom and quality > 0.
+[px4_odometry_bridge-2] [WARN] [1789763251.234063651] [uav_px4_odometry_bridge]: vision recovered after loss -> reset_counter=1
+[vision_health_node-3] [ERROR] [1789763251.595611587] [uav_vision_health]: PX4 FAILSAFE asserted (nav_state=1); vision quality=100 health=OK
+[vo_node-1] [INFO] [1789763252.369308017] [uav_visual_odometry]: frames=11 feat=145 health=OK latency=0.0 ms
+[vision_health_node-3] [INFO] [1789763253.271717342] [uav_vision_health]: PX4 failsafe cleared -- vision fusion recovered
+[vo_node-1] [INFO] [1789763253.867516980] [uav_visual_odometry]: frames=27 feat=145 health=OK latency=0.0 ms
+[px4_odometry_bridge-2] [INFO] [1789763253.867849443] [uav_px4_odometry_bridge]: EV published=51 skipped=9 quality=100 health=OK resets=1
+[vo_node-1] [INFO] [1789763255.098454017] [uav_visual_odometry]: frames=15 feat=145 health=OK latency=0.0 ms
+[vo_node-1] [INFO] [1789763256.152828462] [uav_visual_odometry]: frames=6 feat=83 health=DEGRADED latency=0.0 ms
+[px4_odometry_bridge-2] [INFO] [1789763256.153404230] [uav_px4_odometry_bridge]: EV published=60 skipped=0 quality=69 health=DEGRADED resets=1
+[vo_node-1] [INFO] [1789763257.242780073] [uav_visual_odometry]: frames=10 feat=64 health=DEGRADED latency=0.0 ms
+[px4_odometry_bridge-2] [INFO] [1789763258.406877392] [uav_px4_odometry_bridge]: EV published=53 skipped=7 quality=60 health=DEGRADED resets=1
+[vo_node-1] [INFO] [1789763258.416527459] [uav_visual_odometry]: frames=10 feat=73 health=DEGRADED latency=0.0 ms
+[vo_node-1] [INFO] [1789763259.496820035] [uav_visual_odometry]: frames=7 feat=279 health=DEGRADED latency=0.0 ms
+[vo_node-1] [INFO] [1789763260.526922428] [uav_visual_odometry]: frames=11 feat=214 health=DEGRADED latency=0.0 ms
+[px4_odometry_bridge-2] [INFO] [1789763260.528116795] [uav_px4_odometry_bridge]: EV published=56 skipped=4 quality=100 health=DEGRADED resets=1
+[vo_node-1] [INFO] [1789763261.528577856] [uav_visual_odometry]: frames=15 feat=114 health=DEGRADED latency=0.0 ms
+[vo_node-1] [INFO] [1789763262.539956651] [uav_visual_odometry]: frames=9 feat=110 health=DEGRADED latency=0.0 ms
+[px4_odometry_bridge-2] [INFO] [1789763262.540206094] [uav_px4_odometry_bridge]: EV published=60 skipped=0 quality=91 health=DEGRADED resets=1
+[vo_node-1] [INFO] [1789763263.546789981] [uav_visual_odometry]: frames=15 feat=109 health=DEGRADED latency=0.0 ms
+[vo_node-1] [INFO] [1789763264.547675046] [uav_visual_odometry]: frames=9 feat=104 health=DEGRADED latency=0.0 ms
+[px4_odometry_bridge-2] [INFO] [1789763264.547903268] [uav_px4_odometry_bridge]: EV published=55 skipped=5 quality=86 health=DEGRADED resets=1
+[vo_node-1] [INFO] [1789763265.560356885] [uav_visual_odometry]: frames=11 feat=104 health=DEGRADED latency=0.0 ms
+[px4_odometry_bridge-2] [INFO] [1789763266.550180376] [uav_px4_odometry_bridge]: EV published=57 skipped=3 quality=85 health=DEGRADED resets=1
+[vo_node-1] [INFO] [1789763266.550180316] [uav_visual_odometry]: frames=17 feat=103 health=DEGRADED latency=0.0 ms
+[vo_node-1] [INFO] [1789763267.558717235] [uav_visual_odometry]: frames=15 feat=102 health=DEGRADED latency=0.0 ms
+[vo_node-1] [INFO] [1789763268.581475802] [uav_visual_odometry]: frames=9 feat=102 health=DEGRADED latency=0.0 ms
+[px4_odometry_bridge-2] [INFO] [1789763268.582435079] [uav_px4_odometry_bridge]: EV published=59 skipped=1 quality=85 health=DEGRADED resets=1
+[vo_node-1] [INFO] [1789763269.618806961] [uav_visual_odometry]: frames=9 feat=84 health=DEGRADED latency=0.0 ms
+[vo_node-1] [INFO] [1789763270.618721466] [uav_visual_odometry]: frames=11 feat=84 health=DEGRADED latency=0.0 ms
+[px4_odometry_bridge-2] [INFO] [1789763270.618881931] [uav_px4_odometry_bridge]: EV published=57 skipped=3 quality=70 health=DEGRADED resets=1
+[vo_node-1] [INFO] [1789763271.633855152] [uav_visual_odometry]: frames=6 feat=84 health=DEGRADED latency=0.0 ms
+[vo_node-1] [INFO] [1789763272.646629005] [uav_visual_odometry]: frames=9 feat=84 health=DEGRADED latency=0.0 ms
+[px4_odometry_bridge-2] [INFO] [1789763272.646763029] [uav_px4_odometry_bridge]: EV published=60 skipped=0 quality=70 health=DEGRADED resets=1
+[vo_node-1] [INFO] [1789763273.664137582] [uav_visual_odometry]: frames=8 feat=84 health=DEGRADED latency=0.0 ms
+[px4_odometry_bridge-2] [INFO] [1789763274.675285334] [uav_px4_odometry_bridge]: EV published=45 skipped=15 quality=22 health=DEGRADED resets=1
+[vo_node-1] [INFO] [1789763274.681266988] [uav_visual_odometry]: frames=4 feat=268 health=DEGRADED latency=0.0 ms
+[vo_node-1] Traceback (most recent call last):
+[vo_node-1]   File "/home/jashan/aerial_interiit_prep/PART_1/install/uav_vision/lib/uav_vision/vo_node", line 33, in <module>
+[vo_node-1]     sys.exit(load_entry_point('uav-vision', 'console_scripts', 'vo_node')())
+[vo_node-1]   File "/home/jashan/aerial_interiit_prep/PART_1/build/uav_vision/uav_vision/vo_node.py", line 268, in main
+[vo_node-1]     rclpy.spin(node)
+[vo_node-1]   File "/opt/ros/humble/local/lib/python3.10/dist-packages/rclpy/__init__.py", line 226, in spin
+[vo_node-1]     executor.spin_once()
+[vo_node-1]   File "/opt/ros/humble/local/lib/python3.10/dist-packages/rclpy/executors.py", line 751, in spin_once
+[vo_node-1]     self._spin_once_impl(timeout_sec)
+[vo_node-1]   File "/opt/ros/humble/local/lib/python3.10/dist-packages/rclpy/executors.py", line 740, in _spin_once_impl
+[vo_node-1]     handler, entity, node = self.wait_for_ready_callbacks(timeout_sec=timeout_sec)
+[vo_node-1]   File "/opt/ros/humble/local/lib/python3.10/dist-packages/rclpy/executors.py", line 723, in wait_for_ready_callbacks
+[vo_node-1]     return next(self._cb_iter)
+[vo_node-1]   File "/opt/ros/humble/local/lib/python3.10/dist-packages/rclpy/executors.py", line 624, in _wait_for_ready_callbacks
+[vo_node-1]     raise ExternalShutdownException()
+[vo_node-1] rclpy.executors.ExternalShutdownException
+[px4_odometry_bridge-2] Traceback (most recent call last):
+[px4_odometry_bridge-2]   File "/home/jashan/aerial_interiit_prep/PART_1/install/uav_vision/lib/uav_vision/px4_odometry_bridge", line 33, in <module>
+[px4_odometry_bridge-2]     sys.exit(load_entry_point('uav-vision', 'console_scripts', 'px4_odometry_bridge')())
+[px4_odometry_bridge-2]   File "/home/jashan/aerial_interiit_prep/PART_1/build/uav_vision/uav_vision/px4_odometry_bridge.py", line 180, in main
+[px4_odometry_bridge-2]     rclpy.spin(node)
+[px4_odometry_bridge-2]   File "/opt/ros/humble/local/lib/python3.10/dist-packages/rclpy/__init__.py", line 226, in spin
+[px4_odometry_bridge-2]     executor.spin_once()
+[px4_odometry_bridge-2]   File "/opt/ros/humble/local/lib/python3.10/dist-packages/rclpy/executors.py", line 751, in spin_once
+[px4_odometry_bridge-2]     self._spin_once_impl(timeout_sec)
+[px4_odometry_bridge-2]   File "/opt/ros/humble/local/lib/python3.10/dist-packages/rclpy/executors.py", line 740, in _spin_once_impl
+[vision_health_node-3] Traceback (most recent call last):
+[vision_health_node-3]   File "/home/jashan/aerial_interiit_prep/PART_1/install/uav_vision/lib/uav_vision/vision_health_node", line 33, in <module>
+[vision_health_node-3]     sys.exit(load_entry_point('uav-vision', 'console_scripts', 'vision_health_node')())
+[vision_health_node-3]   File "/home/jashan/aerial_interiit_prep/PART_1/build/uav_vision/uav_vision/vision_health_node.py", line 189, in main
+[vision_health_node-3]     rclpy.spin(node)
+[vision_health_node-3]   File "/opt/ros/humble/local/lib/python3.10/dist-packages/rclpy/__init__.py", line 226, in spin
+[px4_odometry_bridge-2]     handler, entity, node = self.wait_for_ready_callbacks(timeout_sec=timeout_sec)
+[px4_odometry_bridge-2]   File "/opt/ros/humble/local/lib/python3.10/dist-packages/rclpy/executors.py", line 723, in wait_for_ready_callbacks
+[px4_odometry_bridge-2]     return next(self._cb_iter)
+[px4_odometry_bridge-2]   File "/opt/ros/humble/local/lib/python3.10/dist-packages/rclpy/executors.py", line 596, in _wait_for_ready_callbacks
+[vision_health_node-3]     executor.spin_once()
+[vision_health_node-3]   File "/opt/ros/humble/local/lib/python3.10/dist-packages/rclpy/executors.py", line 751, in spin_once
+[vision_health_node-3]     self._spin_once_impl(timeout_sec)
+[vision_health_node-3]   File "/opt/ros/humble/local/lib/python3.10/dist-packages/rclpy/executors.py", line 740, in _spin_once_impl
+[vision_health_node-3]     handler, entity, node = self.wait_for_ready_callbacks(timeout_sec=timeout_sec)
+[vision_health_node-3]   File "/opt/ros/humble/local/lib/python3.10/dist-packages/rclpy/executors.py", line 723, in wait_for_ready_callbacks
+[px4_odometry_bridge-2]     wait_set = _rclpy.WaitSet(
+[px4_odometry_bridge-2] rclpy._rclpy_pybind11.RCLError: failed to initialize wait set: the given context is not valid, either rcl_init() was not called or rcl_shutdown() was called., at ./src/rcl/wait.c:130
+[vision_health_node-3]     return next(self._cb_iter)
+[vision_health_node-3]   File "/opt/ros/humble/local/lib/python3.10/dist-packages/rclpy/executors.py", line 596, in _wait_for_ready_callbacks
+[vision_health_node-3]     wait_set = _rclpy.WaitSet(
+[vision_health_node-3] rclpy._rclpy_pybind11.RCLError: failed to initialize wait set: the given context is not valid, either rcl_init() was not called or rcl_shutdown() was called., at ./src/rcl/wait.c:130
+[ERROR] [px4_odometry_bridge-2]: process has died [pid 79114, exit code 1, cmd '/home/jashan/aerial_interiit_prep/PART_1/install/uav_vision/lib/uav_vision/px4_odometry_bridge --ros-args -r __node:=uav_px4_odometry_bridge --params-file /home/jashan/aerial_interiit_prep/PART_1/install/uav_vision/share/uav_vision/config/vo_params.yaml --params-file /tmp/launch_params_krr7befm'].
+[ERROR] [vision_health_node-3]: process has died [pid 79116, exit code 1, cmd '/home/jashan/aerial_interiit_prep/PART_1/install/uav_vision/lib/uav_vision/vision_health_node --ros-args -r __node:=uav_vision_health --params-file /home/jashan/aerial_interiit_prep/PART_1/install/uav_vision/share/uav_vision/config/vo_params.yaml --params-file /tmp/launch_params_f8v3ipbe'].
+[ERROR] [vo_node-1]: process has died [pid 79112, exit code 1, cmd '/home/jashan/aerial_interiit_prep/PART_1/install/uav_vision/lib/uav_vision/vo_node --ros-args -r __node:=uav_visual_odometry --params-file /home/jashan/aerial_interiit_prep/PART_1/install/uav_vision/share/uav_vision/config/vo_params.yaml --params-file /tmp/launch_params_ozqxx_wl'].
