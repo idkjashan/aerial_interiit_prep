@@ -30,7 +30,7 @@ to know to continue.
 
 ```bash
 cd ~/aerial_interiit_prep
-git pull                       # see section 7 about the branch
+git pull
 rm -rf build install log       # old workspace output at the root
 cd PART_1 && colcon build --symlink-install && source install/setup.bash
 ```
@@ -200,5 +200,5 @@ The submission zip is `PART_1/` and `PART_2/`.
 
 ## 7. Branch and remote
 
-This work was committed locally in WSL. Whether and where it gets pushed is the user's
-call; check with them before pushing or merging.
+Everything above is on `main` (pushed 2026-09-18), so a plain `git pull` gets it. Check
+with the user before pushing your own results back.
