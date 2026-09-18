@@ -1,0 +1,345 @@
+From eb00d265b08b36f1e8a75d7c790d3fc341136c52 Mon Sep 17 00:00:00 2001
+From: idkjashan <jashanpreetsinghbrar01@gmail.com>
+Date: Fri, 18 Sep 2026 10:20:26 +0000
+Subject: [PATCH 1/2] control_allocator: runtime effectiveness scale for one
+ rotor
+
+Adds CA_EFF_MOTOR / CA_EFF_SCALE. The selected motor's column of the
+effectiveness matrix (roll, pitch, yaw torque and thrust) is multiplied by
+CA_EFF_SCALE when the matrix is rebuilt, in the same place the motor failure
+handling (CA_FAILURE_MODE) zeroes a column. While a rotor is scaled down the
+allocator keeps the normalization of the healthy geometry, and the scale is reset
+to 1 whenever the allocators are (re)created. The motor output is
+not touched.
+
+The applied scale and column are published on the new rotor_effectiveness
+topic (on every rebuild and at 1 Hz), logged, and exposed over uXRCE-DDS.
+---
+ msg/CMakeLists.txt                            |  1 +
+ msg/RotorEffectiveness.msg                    |  9 ++
+ .../control_allocator/ControlAllocator.cpp    | 98 ++++++++++++++++++-
+ .../control_allocator/ControlAllocator.hpp    | 18 +++-
+ src/modules/control_allocator/module.yaml     | 28 ++++++
+ src/modules/logger/logged_topics.cpp          |  1 +
+ src/modules/uxrce_dds_client/dds_topics.yaml  |  3 +
+ 7 files changed, 153 insertions(+), 5 deletions(-)
+ create mode 100644 msg/RotorEffectiveness.msg
+
+diff --git a/msg/CMakeLists.txt b/msg/CMakeLists.txt
+index 95bc589..4663304 100644
+--- a/msg/CMakeLists.txt
++++ b/msg/CMakeLists.txt
+@@ -176,6 +176,7 @@ set(msg_files
+ 	RateCtrlStatus.msg
+ 	RcChannels.msg
+ 	RcParameterMap.msg
++	RotorEffectiveness.msg
+ 	RoverAttitudeSetpoint.msg
+ 	RoverAttitudeStatus.msg
+ 	RoverPositionSetpoint.msg
+diff --git a/msg/RotorEffectiveness.msg b/msg/RotorEffectiveness.msg
+new file mode 100644
+index 0000000..bfae45f
+--- /dev/null
++++ b/msg/RotorEffectiveness.msg
+@@ -0,0 +1,9 @@
++# Runtime effectiveness scaling of a single rotor, as applied by the control allocator.
++# Set through CA_EFF_MOTOR / CA_EFF_SCALE. Published whenever the effectiveness matrix
++# is rebuilt and once per second otherwise.
++
++uint64 timestamp                # time since system start (microseconds)
++
++uint8 motor                     # motor number (1-based, as in CA_EFF_MOTOR), 0 if none selected
++float32 scale                   # scalar applied to that motor's effectiveness column [0, 1]
++float32[6] effectiveness        # the motor's column as used by the allocator: roll, pitch, yaw torque, thrust x, y, z
+diff --git a/src/modules/control_allocator/ControlAllocator.cpp b/src/modules/control_allocator/ControlAllocator.cpp
+index e0dc14b..5d12e66 100644
+--- a/src/modules/control_allocator/ControlAllocator.cpp
++++ b/src/modules/control_allocator/ControlAllocator.cpp
+@@ -45,6 +45,7 @@
+ #include <circuit_breaker/circuit_breaker.h>
+ #include <mathlib/math/Limits.hpp>
+ #include <mathlib/math/Functions.hpp>
++#include <systemlib/mavlink_log.h>
+ 
+ using namespace matrix;
+ using namespace time_literals;
+@@ -120,6 +121,7 @@ ControlAllocator::parameters_updated()
+ 	// Allocation method & effectiveness source
+ 	// Do this first: in case a new method is loaded, it will be configured below
+ 	bool updated = update_effectiveness_source();
++	const bool allocators_recreated = updated || _allocation_method_id != (AllocationMethod)_param_ca_method.get();
+ 	update_allocation_method(updated); // must be called after update_effectiveness_source()
+ 
+ 	if (_num_control_allocation == 0) {
+@@ -130,9 +132,52 @@ ControlAllocator::parameters_updated()
+ 		_control_allocation[i]->updateParameters();
+ 	}
+ 
++	update_rotor_effectiveness_scale(allocators_recreated);
++
+ 	update_effectiveness_matrix_if_needed(EffectivenessUpdateReason::CONFIGURATION_UPDATE);
+ }
+ 
++void
++ControlAllocator::update_rotor_effectiveness_scale(bool allocators_recreated)
++{
++	const int motor_idx = _param_ca_eff_motor.get() - 1;
++	float scale = _param_ca_eff_scale.get();
++	scale = PX4_ISFINITE(scale) ? math::constrain(scale, 0.f, 1.f) : 1.f;
++
++	// CA_EFF_SCALE is a flight-test input. New allocator objects (at startup, or after
++	// CA_AIRFRAME / CA_METHOD changed) take their normalization from the first matrix they
++	// see, so that matrix has to be the healthy one.
++	if (allocators_recreated && scale < 1.f) {
++		PX4_WARN("allocation (re)configured, CA_EFF_SCALE reset to 1");
++		_param_ca_eff_scale.set(1.f);
++		_param_ca_eff_scale.commit_no_notification();
++		scale = 1.f;
++	}
++
++	const float new_scale = (motor_idx >= 0) ? scale : 1.f;
++
++	if (motor_idx != _eff_motor_idx || fabsf(new_scale - _eff_scale) > FLT_EPSILON) {
++		if (motor_idx >= 0) {
++			// also printed on the PX4 console
++			mavlink_log_info(&_mavlink_log_pub, "Motor %d effectiveness %.0f%%", motor_idx + 1, (double)(new_scale * 100.f));
++
++		} else if (_eff_motor_idx >= 0) {
++			PX4_INFO("rotor effectiveness scaling off");
++		}
++	}
++
++	_eff_motor_idx = motor_idx;
++	_eff_scale = new_scale;
++
++	// While a rotor is scaled down keep the normalization of the healthy geometry, as the
++	// built-in motor failure handling does. Re-normalizing on the scaled matrix would change
++	// the gain from the rate controller's normalized torque to motor output on every axis.
++	// (Parameter updates only get here when no motor failure is being handled.)
++	for (int i = 0; i < _num_control_allocation; ++i) {
++		_control_allocation[i]->setHadActuatorFailure(_eff_scale < 1.f);
++	}
++}
++
+ void
+ ControlAllocator::update_allocation_method(bool force)
+ {
+@@ -457,6 +502,10 @@ ControlAllocator::Run()
+ 		_last_status_pub = now;
+ 	}
+ 
++	if (now - _last_rotor_effectiveness_pub >= 1_s) {
++		publish_rotor_effectiveness();
++	}
++
+ 	perf_end(_loop_perf);
+ }
+ 
+@@ -536,19 +585,38 @@ ControlAllocator::update_effectiveness_matrix_if_needed(EffectivenessUpdateReaso
+ 			}
+ 		}
+ 
+-		// Handle failed actuators
+-		if (_handled_motor_failure_bitmask) {
++		if (_eff_motor_idx >= _num_actuators[0]) {
++			PX4_WARN("CA_EFF_MOTOR %d ignored, only %d motors", _eff_motor_idx + 1, _num_actuators[0]);
++			_eff_motor_idx = -1;
++			_eff_scale = 1.f;
++
++			for (int i = 0; i < _num_control_allocation; ++i) {
++				_control_allocation[i]->setHadActuatorFailure(_handled_motor_failure_bitmask != 0);
++			}
++		}
++
++		// Handle failed actuators, and the runtime effectiveness scale of one motor.
++		// Both act on the motor's whole column: roll, pitch, yaw torque and thrust.
++		_eff_column.setZero();
++
++		if (_handled_motor_failure_bitmask || _eff_motor_idx >= 0) {
+ 			actuator_idx = 0;
+ 			memset(&actuator_idx_matrix, 0, sizeof(actuator_idx_matrix));
+ 
+ 			for (int motors_idx = 0; motors_idx < _num_actuators[0] && motors_idx < actuator_motors_s::NUM_CONTROLS; motors_idx++) {
+ 				int selected_matrix = _control_allocation_selection_indexes[actuator_idx];
++				ActuatorEffectiveness::EffectivenessMatrix &matrix = config.effectiveness_matrices[selected_matrix];
++				const int column = actuator_idx_matrix[selected_matrix];
+ 
+ 				if (_handled_motor_failure_bitmask & (1 << motors_idx)) {
+-					ActuatorEffectiveness::EffectivenessMatrix &matrix = config.effectiveness_matrices[selected_matrix];
++					for (int i = 0; i < NUM_AXES; i++) {
++						matrix(i, column) = 0.0f;
++					}
+ 
++				} else if (motors_idx == _eff_motor_idx) {
+ 					for (int i = 0; i < NUM_AXES; i++) {
+-						matrix(i, actuator_idx_matrix[selected_matrix]) = 0.0f;
++						matrix(i, column) *= _eff_scale;
++						_eff_column(i) = matrix(i, column);
+ 					}
+ 				}
+ 
+@@ -590,9 +658,27 @@ ControlAllocator::update_effectiveness_matrix_if_needed(EffectivenessUpdateReaso
+ 
+ 		trims.timestamp = hrt_absolute_time();
+ 		_actuator_servos_trim_pub.publish(trims);
++
++		publish_rotor_effectiveness();
+ 	}
+ }
+ 
++void
++ControlAllocator::publish_rotor_effectiveness()
++{
++	rotor_effectiveness_s rotor_effectiveness{};
++	rotor_effectiveness.motor = static_cast<uint8_t>(_eff_motor_idx + 1);
++	rotor_effectiveness.scale = _eff_scale;
++
++	for (int i = 0; i < NUM_AXES; i++) {
++		rotor_effectiveness.effectiveness[i] = _eff_column(i);
++	}
++
++	rotor_effectiveness.timestamp = hrt_absolute_time();
++	_rotor_effectiveness_pub.publish(rotor_effectiveness);
++	_last_rotor_effectiveness_pub = rotor_effectiveness.timestamp;
++}
++
+ void
+ ControlAllocator::publish_control_allocator_status(int matrix_index)
+ {
+@@ -832,6 +918,10 @@ int ControlAllocator::print_status()
+ 			 _handled_motor_failure_bitmask);
+ 	}
+ 
++	if (_eff_motor_idx >= 0) {
++		PX4_INFO("Motor %i effectiveness scaled to %.2f", _eff_motor_idx + 1, (double)_eff_scale);
++	}
++
+ 	// Print perf
+ 	perf_print_counter(_loop_perf);
+ 
+diff --git a/src/modules/control_allocator/ControlAllocator.hpp b/src/modules/control_allocator/ControlAllocator.hpp
+index 14c3002..ce889ec 100644
+--- a/src/modules/control_allocator/ControlAllocator.hpp
++++ b/src/modules/control_allocator/ControlAllocator.hpp
+@@ -74,6 +74,7 @@
+ #include <uORB/topics/actuator_servos_trim.h>
+ #include <uORB/topics/control_allocator_status.h>
+ #include <uORB/topics/parameter_update.h>
++#include <uORB/topics/rotor_effectiveness.h>
+ #include <uORB/topics/vehicle_control_mode.h>
+ #include <uORB/topics/vehicle_torque_setpoint.h>
+ #include <uORB/topics/vehicle_thrust_setpoint.h>
+@@ -135,6 +136,10 @@ private:
+ 
+ 	void check_for_motor_failures();
+ 
++	void update_rotor_effectiveness_scale(bool allocators_recreated);
++
++	void publish_rotor_effectiveness();
++
+ 	void publish_control_allocator_status(int matrix_index);
+ 
+ 	void publish_actuator_controls();
+@@ -187,6 +192,7 @@ private:
+ 	uORB::Publication<actuator_motors_s>	_actuator_motors_pub{ORB_ID(actuator_motors)};
+ 	uORB::Publication<actuator_servos_s>	_actuator_servos_pub{ORB_ID(actuator_servos)};
+ 	uORB::Publication<actuator_servos_trim_s>	_actuator_servos_trim_pub{ORB_ID(actuator_servos_trim)};
++	uORB::Publication<rotor_effectiveness_s>	_rotor_effectiveness_pub{ORB_ID(rotor_effectiveness)};
+ 
+ 	uORB::SubscriptionInterval _parameter_update_sub{ORB_ID(parameter_update), 1_s};
+ 
+@@ -202,6 +208,14 @@ private:
+ 	// For example, the system might report two motor failures, but only the first one is handled by CA
+ 	uint16_t _handled_motor_failure_bitmask{0};
+ 
++	// Runtime effectiveness scaling of one motor (CA_EFF_MOTOR / CA_EFF_SCALE).
++	// Applied to the motor's whole column, at the same place the failure handling above zeroes it.
++	int _eff_motor_idx{-1};				///< 0-based motor index, -1 if none selected
++	float _eff_scale{1.f};
++	matrix::Vector<float, NUM_AXES> _eff_column{};	///< scaled column, for logging
++	hrt_abstime _last_rotor_effectiveness_pub{0};
++	orb_advert_t _mavlink_log_pub{nullptr};
++
+ 	perf_counter_t	_loop_perf;			/**< loop duration performance counter */
+ 
+ 	bool _armed{false};
+@@ -217,7 +231,9 @@ private:
+ 		(ParamInt<px4::params::CA_AIRFRAME>) _param_ca_airframe,
+ 		(ParamInt<px4::params::CA_METHOD>) _param_ca_method,
+ 		(ParamInt<px4::params::CA_FAILURE_MODE>) _param_ca_failure_mode,
+-		(ParamInt<px4::params::CA_R_REV>) _param_r_rev
++		(ParamInt<px4::params::CA_R_REV>) _param_r_rev,
++		(ParamInt<px4::params::CA_EFF_MOTOR>) _param_ca_eff_motor,
++		(ParamFloat<px4::params::CA_EFF_SCALE>) _param_ca_eff_scale
+ 	)
+ 
+ };
+diff --git a/src/modules/control_allocator/module.yaml b/src/modules/control_allocator/module.yaml
+index 99d0d5e..863a073 100644
+--- a/src/modules/control_allocator/module.yaml
++++ b/src/modules/control_allocator/module.yaml
+@@ -592,6 +592,34 @@ parameters:
+                 1: Remove first failed motor from effectiveness
+             default: 0
+ 
++        CA_EFF_MOTOR:
++            description:
++                short: Motor whose effectiveness is scaled at runtime
++                long: |
++                    Motor number (1-based, same numbering as 'failure motor -i') whose
++                    column in the effectiveness matrix is multiplied by CA_EFF_SCALE.
++                    0 disables the scaling. Only the allocator's model of the rotor
++                    changes; the motor output itself is not overridden.
++            type: int32
++            min: 0
++            max: 12
++            default: 0
++
++        CA_EFF_SCALE:
++            description:
++                short: Effectiveness scale of the motor selected by CA_EFF_MOTOR
++                long: |
++                    1 is nominal, 0 removes the motor from the allocation. Takes effect
++                    on the next parameter update, also in flight. Reset to 1 at startup
++                    and when CA_AIRFRAME or CA_METHOD change, so the allocator
++                    normalization is always taken from the healthy geometry.
++            type: float
++            min: 0.0
++            max: 1.0
++            decimal: 2
++            increment: 0.05
++            default: 1.0
++
+ # Mixer
+ mixer:
+     actuator_types:
+diff --git a/src/modules/logger/logged_topics.cpp b/src/modules/logger/logged_topics.cpp
+index 1d9362b..11bda15 100644
+--- a/src/modules/logger/logged_topics.cpp
++++ b/src/modules/logger/logged_topics.cpp
+@@ -106,6 +106,7 @@ void LoggedTopics::add_default_topics()
+ 	add_topic("position_setpoint_triplet", 200);
+ 	add_optional_topic("px4io_status");
+ 	add_topic("radio_status");
++	add_optional_topic("rotor_effectiveness");
+ 	add_optional_topic("rover_attitude_setpoint", 100);
+ 	add_optional_topic("rover_attitude_status", 100);
+ 	add_optional_topic("rover_position_setpoint", 100);
+diff --git a/src/modules/uxrce_dds_client/dds_topics.yaml b/src/modules/uxrce_dds_client/dds_topics.yaml
+index 41f44e6..7d55b98 100644
+--- a/src/modules/uxrce_dds_client/dds_topics.yaml
++++ b/src/modules/uxrce_dds_client/dds_topics.yaml
+@@ -67,6 +67,9 @@ publications:
+   - topic: /fmu/out/vehicle_command_ack
+     type: px4_msgs::msg::VehicleCommandAck
+ 
++  - topic: /fmu/out/rotor_effectiveness
++    type: px4_msgs::msg::RotorEffectiveness
++
+   - topic: /fmu/out/vehicle_global_position
+     type: px4_msgs::msg::VehicleGlobalPosition
+     rate_limit: 50.
+-- 
+2.53.0
+

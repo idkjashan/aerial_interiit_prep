@@ -1,0 +1,35 @@
+From f9df710516cdf5c475927bac943c2e5cb32f167c Mon Sep 17 00:00:00 2001
+From: idkjashan <jashanpreetsinghbrar01@gmail.com>
+Date: Fri, 18 Sep 2026 10:20:26 +0000
+Subject: [PATCH 2/2] gz_bridge: report ESC output function and current
+
+esc_status from the gz ESC interface had no actuator_function and no current,
+so the failure detector skipped every ESC and 'failure motor off' had no
+effect in SITL. Fill both in (current is a simple speed^2 stand-in).
+---
+ .../simulation/gz_bridge/GZMixingInterfaceESC.cpp        | 9 +++++++++
+ 1 file changed, 9 insertions(+)
+
+diff --git a/src/modules/simulation/gz_bridge/GZMixingInterfaceESC.cpp b/src/modules/simulation/gz_bridge/GZMixingInterfaceESC.cpp
+index f556817..b11080d 100644
+--- a/src/modules/simulation/gz_bridge/GZMixingInterfaceESC.cpp
++++ b/src/modules/simulation/gz_bridge/GZMixingInterfaceESC.cpp
+@@ -116,6 +116,15 @@ void GZMixingInterfaceESC::motorSpeedCallback(const gz::msgs::Actuators &actuato
+ 		esc_status.esc[i].esc_rpm = actuators.velocity(i);
+ 		esc_status.esc_online_flags |= 1 << i;
+ 
++		// Fill in the two fields the motor failure detector (FD_ACT_EN) and the failure
++		// injection key on: which motor this ESC drives, and a current. Without them every
++		// ESC maps to an invalid motor index and is skipped, so 'failure motor off' does
++		// nothing in SITL. The current is only a plausible stand-in (~speed^2, 30 A at
++		// full speed), not a motor model.
++		esc_status.esc[i].actuator_function = static_cast<uint8_t>(_mixing_output.outputFunction(i));
++		const float speed_ratio = static_cast<float>(actuators.velocity(i)) / fmaxf(_mixing_output.maxValue(i), 1.f);
++		esc_status.esc[i].esc_current = 30.f * speed_ratio * speed_ratio;
++
+ 		if (actuators.velocity(i) > 0) {
+ 			esc_status.esc_armed_flags |= 1 << i;
+ 		}
+-- 
+2.53.0
+
