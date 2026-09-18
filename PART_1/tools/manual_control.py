@@ -114,6 +114,7 @@ class ManualController(Node):
         self.pub_cmd = self.create_publisher(VehicleCommand, "/fmu/in/vehicle_command", px4_pub_qos())
         self.pub_ocm = self.create_publisher(OffboardControlMode, "/fmu/in/offboard_control_mode", px4_pub_qos())
         self.pub_sp = self.create_publisher(TrajectorySetpoint, "/fmu/in/trajectory_setpoint", px4_pub_qos())
+        self.pub_cmd_vel = self.create_publisher(Twist, "/cmd_vel", 10)
         self.create_subscription(Twist, "/cmd_vel", self._on_cmd_vel, 10)
         self.create_subscription(PoseStamped, "/goal_pose", self._on_goal_pose, 10)
 
@@ -278,7 +279,15 @@ class ManualController(Node):
                 self.cmd_linear = [0.0, 0.0, 0.0]
                 self.cmd_yaw_rate = 0.0
 
-            # body FLU velocity -> NED setpoint
+            # Publish /cmd_vel for any listening node
+            tw = Twist()
+            tw.linear.x = float(self.cmd_linear[0])
+            tw.linear.y = float(self.cmd_linear[1])
+            tw.linear.z = float(self.cmd_linear[2])
+            tw.angular.z = float(self.cmd_yaw_rate)
+            self.pub_cmd_vel.publish(tw)
+
+            # Also publish direct trajectory setpoint if standalone
             vx_body, vy_body, vz_body = self.cmd_linear
             cos_y = math.cos(self.yaw)
             sin_y = math.sin(self.yaw)
