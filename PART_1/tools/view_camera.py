@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Live Camera Viewer with Flight Telemetry HUD.
+"""Camera view with a small telemetry overlay (lighter than monitor.py).
 
 Subscribes to:
   - /uav/rgb (camera feed)
@@ -14,8 +14,6 @@ Usage:
   export ROS_DOMAIN_ID=77
   python3 PART_1/tools/view_camera.py
 """
-import sys
-import os
 import cv2
 import numpy as np
 import rclpy
@@ -92,8 +90,6 @@ class CameraViewer(Node):
         disp = cv2.resize(frame, (960, 540))
 
         # HUD Overlay
-        armed = self.status.arming_state == VehicleStatus.ARMING_STATE_ARMED if self.status else False
-        nav = self.status.nav_state if self.status else "UNKNOWN"
         alt = f"{-self.lpos.z:.2f} m" if self.lpos else "n/a"
         x = f"{self.lpos.x:.2f}" if self.lpos else "0.0"
         y = f"{self.lpos.y:.2f}" if self.lpos else "0.0"

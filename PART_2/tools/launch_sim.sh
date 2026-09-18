@@ -1,18 +1,10 @@
 #!/usr/bin/env bash
-# ==============================================================================
-# launch_sim.sh: Bring up Gazebo (GUI), PX4 SITL, Bridges for Part 2
-# ==============================================================================
-# - Launches Gazebo Sim with GUI on NVIDIA GPU (RTX 4060 hardware accelerated)
-# - Spawns gz_x500 quadrotor (airframe 4001) in the world at origin
-# - Starts MicroXRCEAgent on port 8890 (ROS_DOMAIN_ID=77)
-# - Starts clock bridge for ROS 2 time synchronization
-# - MAVLink exposed on UDP 14550 (QGroundControl) and UDP 14540 (pymavlink/scripts)
-# - Manual flight mode: sits on ground ready for manual arming / QGC
-#
-# Usage:
-#   ./tools/launch_sim.sh               # Headed with Gazebo GUI
-#   ./tools/launch_sim.sh --headless    # Headless mode
-# ==============================================================================
+# Start the Part 2 simulation in the background and wait on the ground:
+# MicroXRCEAgent (port 8890, ROS_DOMAIN_ID 77), PX4 SITL with the Gazebo x500 (airframe
+# 4001) and the Part 2 parameters, and a clock bridge. MAVLink for QGC on 14550 and for
+# the scripts on 14540. Logs go to PART_2/logs/.
+#   ./launch_sim.sh              with the Gazebo window
+#   ./launch_sim.sh --headless
 set -eo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"

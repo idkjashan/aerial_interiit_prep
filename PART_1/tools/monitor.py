@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Graphical Flight Telemetry & Vision Health HUD Monitor.
+"""Live camera view with VO health and flight state drawn on top.
 
 Subscribes to:
   - /uav/rgb                          (Downward camera image)
@@ -12,10 +12,7 @@ Subscribes to:
 
 Displays:
   - Live 1080p camera feed (scaled for display)
-  - Color-coded status banners:
-      * GREEN:  Vision Healthy (OK, 100%) - OFFBOARD Position Hold
-      * RED:    VISION CUT / LOST (0%) - PX4 EKF2 Failsafe / Altitude Hold Active
-      * YELLOW: Vision Degraded / Relocalizing
+  - a status banner: green = vision OK, yellow = degraded, red = lost
   - Numerical telemetry: Altitude AGL, Velocity, Position (X,Y), Max Drift
   - Flight mode & arming state
 """
@@ -23,6 +20,8 @@ import math
 import sys
 import os
 
+# Run from a plain shell without sourcing anything: restart once with px4_msgs on
+# LD_LIBRARY_PATH, and use the launch scripts' ROS_DOMAIN_ID (77) unless one is set.
 lib_dir = os.path.expanduser("~/px4_ros_ws/install/px4_msgs/lib")
 if lib_dir not in os.environ.get("LD_LIBRARY_PATH", ""):
     os.environ["LD_LIBRARY_PATH"] = f"{lib_dir}:{os.environ.get('LD_LIBRARY_PATH', '')}"
@@ -50,7 +49,6 @@ from rclpy.qos import QoSProfile, ReliabilityPolicy, DurabilityPolicy, HistoryPo
 
 from sensor_msgs.msg import Image
 from std_msgs.msg import String, Int32
-from diagnostic_msgs.msg import DiagnosticArray
 from px4_msgs.msg import VehicleLocalPosition, VehicleStatus
 
 
@@ -152,8 +150,6 @@ class FlightMonitor(Node):
         nav_str = nav_names.get(nav_state, f"STATE_{nav_state}")
 
         alt_str = f"{-self.lpos.z:.2f} m" if self.lpos else "0.00 m"
-        vx = f"{self.lpos.vx:.2f}" if self.lpos else "0.0"
-        vy = f"{self.lpos.vy:.2f}" if self.lpos else "0.0"
         x_str = f"{self.lpos.x:.2f}" if self.lpos else "0.0"
         y_str = f"{self.lpos.y:.2f}" if self.lpos else "0.0"
 

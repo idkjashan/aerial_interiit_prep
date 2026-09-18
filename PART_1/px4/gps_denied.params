@@ -48,6 +48,9 @@ COM_RCL_EXCEPT   4        # bit2 = OFFBOARD exempt from RC-loss failsafe (no RC 
 NAV_DLL_ACT      0        # no action on data-link loss
 NAV_RCL_ACT      0        # no action on RC loss
 COM_ARM_WO_GPS   1        # warning only (default). Skipped entirely when SYS_HAS_GPS=0.
+COM_RC_IN_MODE   4        # no RC or joystick expected in SITL
+COM_OBL_RC_ACT   1        # offboard lost -> Altitude mode (holds height, horizontal drifts)
+COM_POSCTL_NAVL  0        # position lost in Position mode -> Altitude mode (not Land)
 
 # --- failsafe thresholds we deliberately keep at default ----------------------
 # The PS asks us to keep innovations BELOW the failsafe limits, so do NOT relax these.

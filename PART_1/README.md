@@ -19,7 +19,7 @@ airframe `gz_x500_depth_down` (OakD-Lite pointing down).
 | Landing | `NAV_LAND` accepted, touchdown, auto-disarm |
 | Log | rosbag of VO, health, EV output and EKF2 state, 142 s |
 
-Logs and plots are in `logs/`.
+Logs and plots are in `logs/`, the screen recording in `video/`.
 
 ## How it works
 
@@ -73,13 +73,24 @@ camera + attitude ─► vo_node ─► px4_odometry_bridge ─► /fmu/in/vehic
 ```
 PART_1/                        this folder is the colcon workspace
 ├── src/
-│   ├── uav_vision/            VO core, the four nodes, launch file, params, tests
+│   ├── uav_vision/            VO core, the four nodes, launch file, params, RViz config, tests
 │   └── uav_sim_bringup/       optional: one launch file for gz + PX4 + agent + bridge + stack
-├── px4/
-│   ├── gps_denied.params      annotated PX4 parameters
+├── px4/                       files added to PX4-Autopilot, at their PX4 paths
+│   ├── ROMFS/.../4022_gz_x500_depth_down      airframe (GPS-denied defaults)
+│   ├── Tools/simulation/gz/models/            x500_depth_down, textured_ground
+│   ├── Tools/simulation/gz/worlds/vo_ground.sdf
+│   ├── src/modules/uxrce_dds_client/dds_topics.yaml   adds estimator_status
+│   ├── gps_denied.params      the same parameters, annotated
 │   └── textured_ground.sdf.snippet
 ├── tools/
-│   ├── run_sim.sh             start everything in order and record a rosbag
+│   ├── run_sim.sh             automatic run: start everything, fly the 90 s hover, record a rosbag
+│   ├── launch_sim.sh          manual mode: start everything, vehicle waits on the ground
+│   ├── manual_control.py      arm / takeoff / goto / land, and keyboard flying
+│   ├── monitor.py             camera view with VO health and flight state
+│   ├── vision_cut.sh          pause / resume the camera stream (vision loss demo)
+│   ├── teleop_bridge.py       /cmd_vel -> PX4 velocity setpoints, if manual_control isn't running
+│   ├── view_camera.py, view_rviz.sh   lighter camera view, RViz
+│   ├── plot_bag.py            hold distance, innovation ratios and VO health from a rosbag
 │   ├── check_stack.sh         is every link alive?
 │   ├── validate_vo.py         offline check against exact ground truth
 │   ├── simworld.py, _traj.py  synthetic downward camera for validate_vo.py
@@ -87,36 +98,83 @@ PART_1/                        this folder is the colcon workspace
 ├── docs/
 │   ├── setup.md               step-by-step setup, PX4 parameters, troubleshooting
 │   └── validation.md          how the offline numbers were produced
-└── logs/                      rosbag, plots, video
+├── logs/                      rosbag and plots
+└── video/part1_demo.webm
 ```
 
 ## Running it
 
+Needs ROS 2 Humble, `px4_msgs` (release/1.16) built in `~/px4_ros_ws`,
+Micro-XRCE-DDS-Agent and PX4-Autopilot built for SITL in `~/PX4-Autopilot` (or set
+`PX4_DIR`). Copy the files under `px4/` into the PX4 tree first (they are at the same
+paths), then `make px4_sitl` so PX4 picks up the new airframe.
+
 ```bash
 cd PART_1
+source ~/px4_ros_ws/install/setup.bash
 colcon build --symlink-install
 source install/setup.bash
 
 # offline checks, no simulator needed
 python3 -m pytest src/uav_vision/test -q
-cd tools && PYTHONPATH=../src/uav_vision python3 validate_vo.py --suite full
-
-# one-time: textured ground world and PX4 parameters -> docs/setup.md, sections 3 and 4
-
-# fly
-./run_sim.sh               # full mission, logs in PART_1/logs/
-./check_stack.sh           # second terminal
+cd tools && PYTHONPATH=../src/uav_vision python3 validate_vo.py --suite full && cd ..
 ```
 
-`run_sim.sh` uses PX4 instance 1, DDS port 8890, `ROS_DOMAIN_ID=77` and its own Gazebo
-partition so it can run next to another simulation. Paths come from `PX4_DIR` (default
-`~/PX4-Autopilot`) and `PX4_WS` (default `~/px4_ros_ws`).
+Both launch scripts use PX4 instance 1, DDS port 8890, `ROS_DOMAIN_ID=77` and their own
+Gazebo partition, so they can run next to another simulation.
 
-Alternatively, with `uav_sim_bringup` built:
+### Automatic run (the 90 s hover)
 
 ```bash
-ros2 launch uav_sim_bringup sim_bringup.launch.py world:=vo_ground
+./tools/run_sim.sh               # arm -> 10 m -> 90 s hold -> land, rosbag in logs/
+./tools/check_stack.sh           # second terminal: topic rates, EKF2 flags, health
+python3 tools/plot_bag.py        # plots from the latest bag, into logs/
 ```
+
+The mission node prints the maximum distance from the hold point and PASS/FAIL against
+1.5 m when the hold ends.
+
+### Manual mode
+
+```bash
+./tools/launch_sim.sh            # Gazebo window; --headless to skip it
+python3 tools/monitor.py         # second terminal: camera + VO health + position
+python3 tools/manual_control.py takeoff 10
+python3 tools/manual_control.py goto 2.0 1.0 10.0     # ENU: 2 m east, 1 m north, 10 m up
+python3 tools/manual_control.py land
+```
+
+`takeoff`, `hover` and `goto` keep streaming setpoints until Ctrl-C, so stop one before
+starting the next, or send new goals to the running one on `/goal_pose`.
+
+`manual_control.py` without arguments is interactive: `a` arm, `t` take off to 10 m,
+`h` hold, `L` land, `d` disarm, `i` `,` `j` `l` move, `w` `s` up/down, `u` `o` yaw, `k`
+stop, space for status. It also takes `geometry_msgs/PoseStamped` goals on `/goal_pose`
+and velocity commands on `/cmd_vel`, so `ros2 run teleop_twist_keyboard
+teleop_twist_keyboard` works too. RViz: `./tools/view_rviz.sh`.
+
+Take off with `manual_control.py`, not with the QGroundControl takeoff slider. QGC's takeoff
+goes through PX4's Takeoff mode, and in this GPS-denied setup we saw the vehicle yaw hard on
+liftoff that way. `manual_control.py` climbs in OFFBOARD and keeps the current heading.
+
+### Vision loss and recovery
+
+```bash
+./tools/vision_cut.sh test 5     # pause the camera bridge for 5 s, then resume
+```
+
+VO health goes LOST within half a second and EKF2 loses its horizontal aiding. The
+controller switches to a zero-velocity setpoint. Without a horizontal position PX4 can't
+stay in OFFBOARD, and its failsafe drops to Altitude mode: it holds height on the barometer
+instead of landing (the airframe sets both the offboard-loss and the position-loss action to
+Altitude mode, `COM_OBL_RC_ACT=1`, `COM_POSCTL_NAVL=0`).
+When the images come back, the keyframe from before the cut is still valid, so position
+comes back without a jump. The controller then asks for OFFBOARD again and the hold resumes.
+
+### Other
+
+With `uav_sim_bringup` built, `ros2 launch uav_sim_bringup sim_bringup.launch.py
+world:=vo_ground` starts the whole stack from one launch file.
 
 ## PS requirements
 
@@ -129,7 +187,7 @@ ros2 launch uav_sim_bringup sim_bringup.launch.py world:=vo_ground
 | GPS off, `EKF2_EV_CTRL`, `EKF2_HGT_REF` | `px4/gps_denied.params` |
 | 20–30 Hz, FRD/NED | bridge at 30 Hz, `frames.py` (covered by the tests) |
 | Hover within 1.5 m for 90 s | keyframe anchoring; the mission node reports PASS/FAIL |
-| Failsafe handling and recovery | DEGRADED path in the mission node; keyframe survives a dropout |
+| Failsafe handling and recovery | DEGRADED path in the mission node, `tools/vision_cut.sh`; keyframe survives a dropout |
 | Synchronised logs incl. innovations | rosbag from `run_sim.sh`, `estimator_status` (setup.md §4.3) |
 | Scale-consistent velocity from known height | depth-scaled flow, measured height |
 | Vision pipeline < 60 ms | 6 ms p95 offline |

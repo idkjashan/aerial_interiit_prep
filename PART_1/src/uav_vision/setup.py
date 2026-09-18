@@ -27,9 +27,6 @@ setup(
             'px4_odometry_bridge = uav_vision.px4_odometry_bridge:main',
             'vision_health_node = uav_vision.vision_health_node:main',
             'offboard_mission_node = uav_vision.offboard_mission_node:main',
-            'manual_control = uav_vision.manual_control:main',
-            'monitor = uav_vision.monitor:main',
-            'vision_cut = uav_vision.vision_cut:main',
         ],
     },
 )

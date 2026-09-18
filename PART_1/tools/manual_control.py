@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""Manual Control & Teleoperation Utility for UAV SITL.
+"""Manual flight commands and keyboard control for the Part 1 vehicle.
 
 Provides both an interactive keyboard interface and direct CLI commands for:
   - Arming / Disarming
@@ -10,7 +10,7 @@ Provides both an interactive keyboard interface and direct CLI commands for:
   - Keyboard teleoperation (/cmd_vel)
   - Telemetry & Health status inspection
 
-Works seamlessly whether offboard_mission_node is running or standalone (--no-mission).
+Meant for the manual flight mode started by launch_sim.sh (no mission node running).
 
 Usage:
   Interactive Mode:
@@ -28,6 +28,8 @@ Usage:
 import sys
 import os
 
+# Run from a plain shell without sourcing anything: restart once with px4_msgs on
+# LD_LIBRARY_PATH, and use the launch scripts' ROS_DOMAIN_ID (77) unless one is set.
 lib_dir = os.path.expanduser("~/px4_ros_ws/install/px4_msgs/lib")
 if lib_dir not in os.environ.get("LD_LIBRARY_PATH", ""):
     os.environ["LD_LIBRARY_PATH"] = f"{lib_dir}:{os.environ.get('LD_LIBRARY_PATH', '')}"
@@ -94,6 +96,7 @@ class ManualController(Node):
         self.status = None
         self.lpos = None
         self.yaw = 0.0
+        self.have_att = False
         self.vo_health = "UNKNOWN"
         self.quality = 0
 
@@ -111,13 +114,13 @@ class ManualController(Node):
         self.pub_cmd = self.create_publisher(VehicleCommand, "/fmu/in/vehicle_command", px4_pub_qos())
         self.pub_ocm = self.create_publisher(OffboardControlMode, "/fmu/in/offboard_control_mode", px4_pub_qos())
         self.pub_sp = self.create_publisher(TrajectorySetpoint, "/fmu/in/trajectory_setpoint", px4_pub_qos())
-        self.pub_cmd_vel = self.create_publisher(Twist, "/cmd_vel", 10)
         self.create_subscription(Twist, "/cmd_vel", self._on_cmd_vel, 10)
         self.create_subscription(PoseStamped, "/goal_pose", self._on_goal_pose, 10)
 
         # Standalone control state
         self.mode = "IDLE"  # IDLE, TAKEOFF, HOVER, GOTO, TELEOP
         self.target_pos = [0.0, 0.0, -10.0]  # NED
+        self.target_yaw = 0.0                 # NED heading held with the position setpoint
         self.cmd_linear = [0.0, 0.0, 0.0]
         self.cmd_yaw_rate = 0.0
         self.last_key_time = None
@@ -138,6 +141,7 @@ class ManualController(Node):
 
     def _on_att(self, msg):
         q = msg.q
+        self.have_att = True
         self.yaw = math.atan2(2.0 * (q[0] * q[3] + q[1] * q[2]), 1.0 - 2.0 * (q[2] ** 2 + q[3] ** 2))
 
     def _on_cmd_vel(self, msg):
@@ -214,6 +218,7 @@ class ManualController(Node):
             self.target_pos = [float(self.lpos.x), float(self.lpos.y), -abs(float(altitude))]
         else:
             self.target_pos = [0.0, 0.0, -abs(float(altitude))]
+        self.target_yaw = self.yaw
         self.mode = "TAKEOFF"
         self.arm()
         self.get_logger().info(f"Climbing to {altitude:.1f} m AGL...")
@@ -221,15 +226,17 @@ class ManualController(Node):
     def hover(self):
         if self.lpos:
             self.target_pos = [float(self.lpos.x), float(self.lpos.y), float(self.lpos.z)]
+        self.target_yaw = self.yaw
         self.mode = "HOVER"
         self.get_logger().info(f"Holding hover at current position: NED [{self.target_pos[0]:.2f}, {self.target_pos[1]:.2f}, {self.target_pos[2]:.2f}]")
 
     def goto(self, x_enu, y_enu, alt_m):
-        # Convert ENU x,y,alt to NED x,y,z
-        x_ned = float(x_enu)
-        y_ned = float(y_enu)
+        # ENU (x east, y north) -> PX4 local NED (x north, y east, z down)
+        x_ned = float(y_enu)
+        y_ned = float(x_enu)
         z_ned = -abs(float(alt_m))
         self.target_pos = [x_ned, y_ned, z_ned]
+        self.target_yaw = self.yaw
         self.mode = "GOTO"
         self.get_logger().info(f"Navigating to ENU [{x_enu:.2f}, {y_enu:.2f}, {alt_m:.2f}] -> NED [{x_ned:.2f}, {y_ned:.2f}, {z_ned:.2f}]")
 
@@ -271,15 +278,7 @@ class ManualController(Node):
                 self.cmd_linear = [0.0, 0.0, 0.0]
                 self.cmd_yaw_rate = 0.0
 
-            # Publish /cmd_vel for any listening node
-            tw = Twist()
-            tw.linear.x = float(self.cmd_linear[0])
-            tw.linear.y = float(self.cmd_linear[1])
-            tw.linear.z = float(self.cmd_linear[2])
-            tw.angular.z = float(self.cmd_yaw_rate)
-            self.pub_cmd_vel.publish(tw)
-
-            # Also publish direct trajectory setpoint if standalone
+            # body FLU velocity -> NED setpoint
             vx_body, vy_body, vz_body = self.cmd_linear
             cos_y = math.cos(self.yaw)
             sin_y = math.sin(self.yaw)
@@ -307,7 +306,7 @@ class ManualController(Node):
                     self.get_logger().info(f"Target altitude reached. Holding hover at {target_alt:.1f} m.")
 
             self.send_heartbeat(position=True, velocity=False)
-            self.send_position_sp(self.target_pos)
+            self.send_position_sp(self.target_pos, self.target_yaw)
 
     def get_status_str(self):
         armed = self.status.arming_state == VehicleStatus.ARMING_STATE_ARMED if self.status else False
@@ -335,7 +334,7 @@ def run_interactive(node):
     a : Arm & Enter Offboard
     t : Takeoff to 10 m (Hold altitude)
     h : Hover / Hold Current Position
-    l : Land safely
+    L : Land (shift+l)
     d : Disarm
 
   [Teleoperation Movement - Body FLU]
@@ -379,7 +378,7 @@ def run_interactive(node):
                 elif ch == "h":
                     print("\n[CMD] Hover...")
                     node.hover()
-                elif ch == "l":
+                elif ch == "L":                      # capital: 'l' is strafe right
                     print("\n[CMD] Landing...")
                     node.land()
                 elif ch == "d":
@@ -442,7 +441,7 @@ def main():
         start_wait = time.time()
         while time.time() - start_wait < 3.0:
             rclpy.spin_once(node, timeout_sec=0.1)
-            if node.status is not None and node.lpos is not None:
+            if node.status is not None and node.lpos is not None and node.have_att:
                 break
 
         if cmd == "status":

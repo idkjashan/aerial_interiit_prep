@@ -48,6 +48,7 @@ def flight(path, kind):
         roll = np.minimum(np.radians(200.0) * after, np.radians(175.0))
         z = np.minimum(-20.0 + 0.5 * 9.81 * after ** 2, 0.0)
         yaw_rate = np.radians(170.0) * np.minimum(after, 1.0)
+        yaw_rate = np.where(z >= 0.0, np.radians(1000.0), yaw_rate)   # spinning on the ground
         u0 = np.where(t >= 8.03, np.nan, 0.73)
     us = lambda x: int(1e6 + x * 1e6)          # noqa: E731  (boot at 1 s)
     att = [(us(ti), *quat(r, 0.0, 0.0)) for ti, r in zip(t, roll)]
@@ -105,6 +106,8 @@ def test_injection_and_builtin_removal_become_one_event(tmp_path):
     assert 'removed from allocation after 0.03 s' in label and scale == 0.0
     m = plot_log.segment_metrics(d, te, d['t'][-1], motor)
     assert m['outcome'].startswith('tumbled') and 1.5 < m['t_ground_s'] < 2.5
+    assert m['max_yaw_rate_dps'] < 200               # ground spin after impact not counted
+    assert m['alt_loss_m'] <= 20.0
     assert np.isnan(m['motor_u_end'])                 # stopped motor logs NaN
 
 

@@ -1,12 +1,9 @@
 #!/usr/bin/env bash
-# ==============================================================================
-# vision_cut.sh: Disconnect and Reconnect Camera Stream to Test Failsafe & Recovery
-# ==============================================================================
-# Usage:
-#   ./tools/vision_cut.sh disconnect     # Cuts the camera stream (pauses bridge)
-#   ./tools/vision_cut.sh reconnect      # Restores camera stream (resumes bridge)
-#   ./tools/vision_cut.sh test [sec]     # Cuts for [sec] seconds (default 5) and restores
-# ==============================================================================
+# Cut and restore the camera stream to test vision loss and recovery.
+# It pauses (SIGSTOP) / resumes (SIGCONT) the ros_gz_bridge process carrying the camera.
+#   ./vision_cut.sh disconnect
+#   ./vision_cut.sh reconnect
+#   ./vision_cut.sh test [sec]     # cut for sec seconds (default 5), then restore
 
 ACTION="${1:-help}"
 DURATION="${2:-5}"
@@ -24,13 +21,7 @@ disconnect() {
   for pid in $PIDS; do
     kill -STOP "$pid"
   done
-  echo "================================================================"
-  echo " [!] VISION STREAM DISCONNECTED (Paused PIDs: $PIDS)"
-  echo "     - Camera frames stopped arriving at Visual Odometry node."
-  echo "     - Monitor HUD will turn RED (VISION LOST)."
-  echo "     - PX4 EKF2 enters failsafe (Altitude Mode hold)."
-  echo "     - Drone will hold 10m altitude on Barometer without landing."
-  echo "================================================================"
+  echo "camera stream paused (bridge PIDs: $PIDS) - VO health should go LOST"
 }
 
 reconnect() {
@@ -42,13 +33,7 @@ reconnect() {
   for pid in $PIDS; do
     kill -CONT "$pid"
   done
-  echo "================================================================"
-  echo " [✓] VISION STREAM RECONNECTED (Resumed PIDs: $PIDS)"
-  echo "     - Camera frames restored."
-  echo "     - Visual Odometry re-acquires features (Health -> OK)."
-  echo "     - Monitor HUD turns GREEN (VISION HEALTHY)."
-  echo "     - Drone locks back into rock-solid position hold."
-  echo "================================================================"
+  echo "camera stream resumed (bridge PIDs: $PIDS) - VO health should return to OK"
 }
 
 case "$ACTION" in
@@ -61,7 +46,7 @@ case "$ACTION" in
   test)
     disconnect
     echo
-    echo "Waiting $DURATION seconds to demonstrate failsafe behavior..."
+    echo "restoring in $DURATION s..."
     for i in $(seq "$DURATION" -1 1); do
       echo "  ... restoring in $i s"
       sleep 1
@@ -70,9 +55,6 @@ case "$ACTION" in
     reconnect
     ;;
   *)
-    echo "Usage:"
-    echo "  ./tools/vision_cut.sh disconnect     # Cut camera stream"
-    echo "  ./tools/vision_cut.sh reconnect      # Restore camera stream"
-    echo "  ./tools/vision_cut.sh test [sec]     # Test 5-second failure & recovery"
+    echo "usage: $0 disconnect | reconnect | test [sec]"
     ;;
 esac

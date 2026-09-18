@@ -1,18 +1,10 @@
 #!/usr/bin/env bash
-# ==============================================================================
-# launch_sim.sh: Bring up Gazebo (GUI), PX4 SITL, Bridges, and Vision Stack
-# ==============================================================================
-# - Launches Gazebo Sim with GUI (3D world visualization)
-# - Spawns the x500_depth_down quadrotor with all sensors & plugins
-# - Runs MicroXRCEAgent on port 8890 (ROS_DOMAIN_ID=77)
-# - Runs clock and camera ros_gz_bridges
-# - Runs GPS-denied visual odometry pipeline (vo_node, bridge, health monitor)
-# - MANUAL MODE by default: vehicle sits on ground, awaiting your command
-#
-# Usage:
-#   ./tools/launch_sim.sh               # Standard launch with Gazebo GUI
-#   ./tools/launch_sim.sh --headless    # Headless (no GUI) if desired
-# ==============================================================================
+# Start the Part 1 simulation in manual mode: MicroXRCEAgent (port 8890, ROS_DOMAIN_ID 77),
+# PX4 SITL with the x500_depth_down in the vo_ground world, the clock and camera bridges,
+# and the VO stack without the mission node. The vehicle waits on the ground for
+# manual_control.py. Logs go to PART_1/logs/.
+#   ./launch_sim.sh              with the Gazebo window
+#   ./launch_sim.sh --headless
 set -eo pipefail
 
 SCRIPT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"

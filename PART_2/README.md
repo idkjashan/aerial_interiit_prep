@@ -14,8 +14,12 @@ PART_2/
 │   ├── patches/          two git patches for PX4-Autopilot (apply these)
 │   ├── msg/, src/        the same changes as full files, at their PX4 paths
 ├── tools/
-│   ├── run_sitl.sh       start PX4 + Gazebo x500 with the Part 2 parameters
+│   ├── run_sitl.sh       PX4 + Gazebo x500 with the Part 2 parameters, PX4 shell in front
+│   ├── launch_sim.sh     the same in the background (agent, clock bridge, logs in logs/)
 │   ├── fly.py            takeoff to 20 m, then the reference run or the effectiveness sweep
+│   ├── manual_control.py takeoff / hover / land over MAVLink, for step-by-step runs
+│   ├── set_effectiveness.py  set CA_EFF_SCALE, or inject PX4's own motor failure
+│   ├── monitor.py        live altitude, tilt, yaw rate, motor commands and column B1
 │   ├── plot_log.py       figures + summary table from the .ulg
 │   └── test_plot_log.py
 ├── model/
@@ -25,7 +29,8 @@ PART_2/
 ├── docs/
 │   ├── allocation_notes.md   the maths behind the results
 │   └── img/
-└── logs/                 flight logs, CSVs and figures from the Gazebo runs
+├── logs/                 flight logs, CSVs and figures from the Gazebo runs
+└── video/part2_demo.webm
 ```
 
 ---
@@ -184,6 +189,17 @@ python3 ../tools/plot_log.py ~/PX4-Autopilot/build/px4_sitl_default/rootfs/log/<
 python3 ../tools/plot_log.py ref.ulg zero.ulg --compare --labels "built-in" "0 %"
 ```
 
+Step by step, e.g. for the video (each command in its own terminal):
+
+```bash
+PART_2/tools/launch_sim.sh                        # --headless to skip the Gazebo window
+python3 PART_2/tools/monitor.py
+python3 PART_2/tools/manual_control.py takeoff 20
+python3 PART_2/tools/set_effectiveness.py 0.75    # then 0.5, 0.25, 0 ... and 1 to restore
+python3 PART_2/tools/set_effectiveness.py failure # PX4's own 'failure motor off -i 1'
+python3 PART_2/tools/set_effectiveness.py status
+```
+
 To see the topic from ROS 2, copy `px4/msg/RotorEffectiveness.msg` into
 `px4_msgs/msg/` in your ROS workspace and rebuild `px4_msgs`.
 
@@ -192,8 +208,6 @@ To see the topic from ROS 2, copy `px4/msg/RotorEffectiveness.msg` into
 ## 5. Results
 
 ### Gazebo SITL
-
-<!-- Filled from logs/ after the Gazebo runs: one row per level from plot_log.py's summary.md. -->
 
 | level | altitude loss | max tilt | max yaw rate | motor 1 at end | outcome |
 |---|---|---|---|---|---|
@@ -206,11 +220,18 @@ To see the topic from ROS 2, copy `px4/msg/RotorEffectiveness.msg` into
 
 Figures: `logs/` (individual event plots in `logs/sweep/results/`, `logs/zero/results/`, `logs/reference/results/`, and `logs/compare.png`).
 
-Comparison with model prediction:
-- 100 %, 75 % and 50 % hold hover with 0 m altitude loss. Gazebo exhibits slightly larger transients (7° vs 5° at 75 %; 17° / 48°/s vs 10° / 17°/s at 50 %) due to real sensor noise, EKF estimation delay, and actuator response dynamics not present in the simplified model.
-- At 25 % the vehicle cannot produce sufficient collective thrust to hover while counteracting the asymmetry; it remains upright (max tilt 25°) and reaches the ground in 3.6 s (model predicted 3.9 s at 15° tilt).
-- At 0 % the vehicle tumbles and hits the ground in 2.2 s (model predicted 2.3 s).
-- Built-in failure handling reaches the ground in 2.1 s (model predicted 2.2 s), within 0.1 s of complete loss (0 %), while experiencing violent spin (1075°/s) during the descent due to zero thrust on motor 1 vs idle spin in 0 %.
+Against the model below:
+
+- 75 % and 50 % hold at 20 m as predicted, with larger transients in Gazebo (7° vs 5° at
+  75 %, 17° and 48°/s vs 10° and 17°/s at 50 %). The model has no sensor noise, EKF or
+  motor-speed dynamics, so a softer transient there is expected.
+- At 25 % the vehicle can't make enough thrust to hover and comes down upright (max tilt
+  25°) in 3.6 s; the model said 3.9 s at 15°.
+- At 0 % it tumbles and reaches the ground in 2.2 s (model 2.3 s).
+- The built-in handling reaches the ground in 2.1 s, 0.1 s before the 0 % run (model 2.2 s).
+  Its altitude loss (22 m from a 20 m hover) and 1075°/s peak yaw rate were measured past
+  the moment of impact, so they include the vehicle tumbling on the ground; the in-air part
+  is in `logs/compare.png`.
 
 ### Model prediction
 

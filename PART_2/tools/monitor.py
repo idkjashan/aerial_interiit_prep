@@ -1,16 +1,14 @@
 #!/usr/bin/env python3
-"""Graphical Flight Telemetry & Rotor Effectiveness HUD Monitor for Part 2.
+"""Live flight and allocator view for the Part 2 runs.
 
-Displays real-time flight metrics, actuator motor saturation, and control allocator
-effectiveness for Part 2 deliverables:
+Shows over MAVLink:
   - Live Altitude and Altitude Loss (m)
   - Current Tilt and Maximum Tilt (deg)
   - Current Yaw Rate and Peak Yaw Rate (deg/s)
   - Actuator Output Gauges (Motors 1 to 4 in rad/s and 0.0 to 1.0)
   - Control Allocator Effectiveness Column Vector B1
-  - Real-time Outcome Verdict Banner
+  - a banner with the current outcome (holding / descending / tumbling)
 """
-import sys
 import os
 import math
 import time
@@ -43,7 +41,7 @@ class Part2Monitor:
                 hb = conn.wait_heartbeat(timeout=1.0)
                 if hb is not None:
                     self.m = conn
-                    print(f"[✓] Part 2 HUD Monitor connected to PX4 SITL on {target}")
+                    print(f"Part 2 HUD Monitor connected to PX4 SITL on {target}")
                     break
             except Exception:
                 pass

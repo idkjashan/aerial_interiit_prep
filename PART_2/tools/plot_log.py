@@ -117,16 +117,22 @@ def find_events(d):
 
 
 def segment_metrics(d, t0, t1, motor=0):
-    """What happened between t0 and t1, relative to the state at t0."""
+    """What happened between t0 and t1, relative to the state at t0.
+
+    If the vehicle reaches the ground, the peak values only cover the flight up to that
+    moment; tumbling on the ground afterwards is not counted.
+    """
     w = (d['t'] >= t0) & (d['t'] < t1)
     if not w.any():
         return None
     k0 = max(np.searchsorted(d['t'], t0) - 1, 0)
     z0 = d['z'][k0]
+    ground = np.flatnonzero(d['z'][w] > -1.0) if z0 < -5.0 else np.array([], int)
+    if len(ground):                                   # cut the window at impact
+        w &= d['t'] <= d['t'][w][ground[0]]
     tw = d['t'][w]
     tilt = np.degrees(d['tilt'][w])
-    last = tw >= tw[-1] - 3.0
-    ground = np.flatnonzero(d['z'][w] > -1.0) if z0 < -5.0 else np.array([], int)
+    last = tw >= tw[-1] - (1.0 if len(ground) else 3.0)
     u = d['u'][w][:, motor]
     m = {
         'duration_s': float(tw[-1] - t0),
@@ -137,7 +143,7 @@ def segment_metrics(d, t0, t1, motor=0):
         'end_alt_err_m': float(np.nanmean(d['z'][w][last]) - z0),
         'motor_u_end': float(np.nanmean(u[last])) if np.isfinite(u[last]).any() else float('nan'),
         'motor_sat_pct': float(100 * np.mean(u[np.isfinite(u)] >= 0.99)) if np.isfinite(u).any() else 0.0,
-        't_ground_s': float(tw[ground[0]] - t0) if len(ground) else None,
+        't_ground_s': float(tw[-1] - t0) if len(ground) else None,
     }
     if m['t_ground_s'] is not None:
         how = 'tumbled' if m['max_tilt_deg'] > 60 else 'came down upright'
@@ -216,14 +222,14 @@ def plot_compare(runs, path, window=(-2.0, 15.0)):
 
 def summary_table(rows):
     head = ('| t (s) | event | alt loss (m) | max tilt (°) | max yaw rate (°/s) | '
-            'motor cmd at end | motor at 100 % (% of time) | outcome |\n'
+            'motor cmd at end* | motor at 100 % (% of time) | outcome |\n'
             '|---|---|---|---|---|---|---|---|\n')
     body = ''
     for te, label, m in rows:
         body += (f'| {te:.1f} | {label} | {m["alt_loss_m"]:.1f} | {m["max_tilt_deg"]:.0f} | '
                  f'{m["max_yaw_rate_dps"]:.0f} | {m["motor_u_end"]:.2f} | {m["motor_sat_pct"]:.0f} | '
                  f'{m["outcome"]} |\n')
-    return head + body
+    return head + body + '\n\\* mean over the last 3 s, or over the last second before impact\n'
 
 
 def analyse(d, out_dir, name='log'):

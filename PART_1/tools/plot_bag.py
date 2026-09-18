@@ -201,7 +201,7 @@ def plot_all(data, out_dir):
         mean_vel = np.nanmean(est["vel"][in_hold_est]) if np.any(in_hold_est) else np.nanmean(est["vel"])
         mean_hgt = np.nanmean(est["hgt"][in_hold_est]) if np.any(in_hold_est) else np.nanmean(est["hgt"])
         print(f"  - innovations.png (mean ratios: pos={mean_pos:.4f}, vel={mean_vel:.4f}, hgt={mean_hgt:.4f})")
-    print(f"  - vision_health.png")
+    print("  - vision_health.png")
 
 
 def main():

@@ -81,6 +81,12 @@ would guess. Get it wrong and the velocity estimate comes out rotated by 90°.
 
 ## 3. Give the ground a texture
 
+The finished files are in `PART_1/px4/` (model `textured_ground`, world `vo_ground.sdf`,
+airframe and `x500_depth_down`). Copy them into the PX4 tree at the same paths and run
+`make px4_sitl`, since PX4 only picks up a new airframe when it is rebuilt
+(`tools/launch_sim.sh` copies them if they are missing). The rest of this section is how
+they were made.
+
 ```bash
 cd PART_1/tools
 python3 make_ground_texture.py --out ground_albedo.png --px 4096 --tiles 24
@@ -120,8 +126,8 @@ reboot
 ```
 
 `tools/run_sim.sh` deletes the saved parameter file on every start so that the airframe
-defaults apply, so for repeat runs the values have to live in the airframe file (4022) or be
-loaded again.
+defaults apply. The airframe `px4/ROMFS/.../4022_gz_x500_depth_down` sets the same values,
+so nothing has to be loaded by hand.
 
 | Parameter | Value | Why |
 |---|---|---|

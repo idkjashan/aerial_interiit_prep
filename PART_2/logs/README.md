@@ -1,6 +1,6 @@
 # Logs
 
-Put the Gazebo runs here, one folder per run:
+One folder per run:
 
 ```
 logs/
@@ -14,4 +14,5 @@ logs/
 ```
 
 PX4 writes the .ulg to `PX4-Autopilot/build/px4_sitl_default/rootfs/log/<date>/`; copy the
-one for each run in here. The screen recording for the video goes next to it.
+one for each run in here. The figures, `summary.md` tables and CSVs are in git; the .ulg
+files are left out of git because of their size and go into the submission zip.

@@ -1,9 +1,10 @@
 # Logs
 
-- `bag_<date>/` — rosbag recorded by `tools/run_sim.sh` (VO odometry, quality, health, AGL,
+- `bag_<date>/`: rosbag recorded by `tools/run_sim.sh` (VO odometry, quality, health, AGL,
   diagnostics, EV sent to PX4, EKF2 local position, status and estimator flags)
-- plots of the 90 s hold: hold radius, EKF2 innovation test ratios, VO quality
-- the screen recording of the flight
+- `hold_distance.png`, `innovations.png`, `vision_health.png`: from
+  `python3 tools/plot_bag.py <bag>`
 
-`run_sim.sh` also writes one text log per component here (`px4.log`, `vision.log`, ...);
-those are not committed.
+The plots are in git. The bag folders and the per-component text logs that `run_sim.sh`
+writes here (`px4.log`, `vision.log`, ...) are left out of git; the bags go into the
+submission zip.

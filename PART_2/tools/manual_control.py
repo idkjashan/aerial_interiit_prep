@@ -94,7 +94,7 @@ class FlightController:
                 cur_alt = -msg.z
                 print(f"\rCurrent Altitude: {cur_alt:.2f} m / {alt:.1f} m", end="", flush=True)
                 if abs(cur_alt - alt) < 0.5:
-                    print(f"\n[✓] Reached target altitude {cur_alt:.2f} m. Stable hover active.")
+                    print(f"\nReached target altitude {cur_alt:.2f} m. Stable hover active.")
                     return True
             time.sleep(0.1)
         print("\nClimb monitoring timed out.")

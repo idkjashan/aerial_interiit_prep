@@ -15,10 +15,19 @@ of an explanation:
     as the PS requires.
 
 Degraded-vision policy (PS: "handle EKF2 failsafe triggers gracefully, with automatic
-recovery once valid vision data resumes"): on loss of vision we stop commanding position
-and switch to a zero-velocity setpoint, which keeps OFFBOARD alive on a signal the
-estimator can still support, then return to position hold once vision recovers. We
-never disarm and never fight a failsafe that PX4 itself raised.
+recovery once valid vision data resumes"): vision counts as lost when VO reports LOST or
+its health topic goes quiet for 0.5 s. We then stop commanding position and send a
+zero-velocity setpoint, which the estimator can still support. Once vision has been good
+for degraded_grace_s we go back to position hold and ask for OFFBOARD again, since PX4
+may have left it during the dropout.
+
+During TAKEOFF and HOLD the node also re-requests OFFBOARD (and re-arms) whenever the
+vehicle is not in it, once a second. That keeps the demo going after a vision dropout,
+but it also means the node takes control back from a PX4 failsafe mode; stop the node
+before taking over manually.
+
+In HOLD, velocity commands on /cmd_vel (e.g. teleop_twist_keyboard) take over while they
+keep arriving; when they stop, the vehicle holds the new position.
 """
 import math
 import numpy as np

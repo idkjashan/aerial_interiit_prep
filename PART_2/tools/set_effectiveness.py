@@ -84,7 +84,7 @@ def set_scale(m, scale, motor=1):
     s_val = set_param(m, "CA_EFF_SCALE", scale, is_int=False)
 
     print("================================================================")
-    print(f" [✓] Rotor Effectiveness Updated: Motor {m_val if m_val is not None else motor} -> {(s_val if s_val is not None else scale) * 100:.0f} %")
+    print(f" Rotor Effectiveness Updated: Motor {m_val if m_val is not None else motor} -> {(s_val if s_val is not None else scale) * 100:.0f} %")
     print(f"     CA_EFF_MOTOR = {m_val if m_val is not None else motor}")
     print(f"     CA_EFF_SCALE = {s_val if s_val is not None else scale:.4f}")
     print("================================================================")
@@ -124,7 +124,12 @@ def get_status(m):
             break
 
     print("================================================================")
-    print(f"  Current Rotor Effectiveness Status: Motor {motor or 1} @ {(scale or 1.0) * 100:.0f} %")
+    if scale is None or motor is None:
+        print("  could not read CA_EFF_SCALE / CA_EFF_MOTOR (is the Part 2 patch built?)")
+    elif motor == 0:
+        print("  rotor effectiveness scaling is off (CA_EFF_MOTOR = 0)")
+    else:
+        print(f"  motor {motor} effectiveness: {scale * 100:.0f} %")
     print("================================================================")
 
 
