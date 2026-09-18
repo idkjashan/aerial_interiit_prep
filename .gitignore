@@ -24,6 +24,9 @@ venv/
 # raw root scratch logs stay out of git
 /logs/
 
+# submission archive
+*.zip
+
 # notes for coding agents, kept local
 .agent/
 
