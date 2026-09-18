@@ -28,6 +28,10 @@ publications:
     type: px4_msgs::msg::EstimatorStatusFlags
     rate_limit: 5.
 
+  - topic: /fmu/out/estimator_status
+    type: px4_msgs::msg::EstimatorStatus
+    rate_limit: 5.
+
   - topic: /fmu/out/failsafe_flags
     type: px4_msgs::msg::FailsafeFlags
     rate_limit: 5.

@@ -1,4 +1,4 @@
-From eb00d265b08b36f1e8a75d7c790d3fc341136c52 Mon Sep 17 00:00:00 2001
+From 9690c1a9a473ce9ea2af2505a5f4eceb86a16f6b Mon Sep 17 00:00:00 2001
 From: idkjashan <jashanpreetsinghbrar01@gmail.com>
 Date: Fri, 18 Sep 2026 10:20:26 +0000
 Subject: [PATCH 1/2] control_allocator: runtime effectiveness scale for one
@@ -26,7 +26,7 @@ topic (on every rebuild and at 1 Hz), logged, and exposed over uXRCE-DDS.
  create mode 100644 msg/RotorEffectiveness.msg
 
 diff --git a/msg/CMakeLists.txt b/msg/CMakeLists.txt
-index 95bc589..4663304 100644
+index 95bc589664..4663304f5e 100644
 --- a/msg/CMakeLists.txt
 +++ b/msg/CMakeLists.txt
 @@ -176,6 +176,7 @@ set(msg_files
@@ -39,7 +39,7 @@ index 95bc589..4663304 100644
  	RoverPositionSetpoint.msg
 diff --git a/msg/RotorEffectiveness.msg b/msg/RotorEffectiveness.msg
 new file mode 100644
-index 0000000..bfae45f
+index 0000000000..bfae45f214
 --- /dev/null
 +++ b/msg/RotorEffectiveness.msg
 @@ -0,0 +1,9 @@
@@ -53,7 +53,7 @@ index 0000000..bfae45f
 +float32 scale                   # scalar applied to that motor's effectiveness column [0, 1]
 +float32[6] effectiveness        # the motor's column as used by the allocator: roll, pitch, yaw torque, thrust x, y, z
 diff --git a/src/modules/control_allocator/ControlAllocator.cpp b/src/modules/control_allocator/ControlAllocator.cpp
-index e0dc14b..5d12e66 100644
+index e0dc14bcbe..5d12e6625a 100644
 --- a/src/modules/control_allocator/ControlAllocator.cpp
 +++ b/src/modules/control_allocator/ControlAllocator.cpp
 @@ -45,6 +45,7 @@
@@ -219,7 +219,7 @@ index e0dc14b..5d12e66 100644
  	perf_print_counter(_loop_perf);
  
 diff --git a/src/modules/control_allocator/ControlAllocator.hpp b/src/modules/control_allocator/ControlAllocator.hpp
-index 14c3002..ce889ec 100644
+index 14c30026d1..ce889ecf4d 100644
 --- a/src/modules/control_allocator/ControlAllocator.hpp
 +++ b/src/modules/control_allocator/ControlAllocator.hpp
 @@ -74,6 +74,7 @@
@@ -276,7 +276,7 @@ index 14c3002..ce889ec 100644
  
  };
 diff --git a/src/modules/control_allocator/module.yaml b/src/modules/control_allocator/module.yaml
-index 99d0d5e..863a073 100644
+index 99d0d5ed85..863a0739d3 100644
 --- a/src/modules/control_allocator/module.yaml
 +++ b/src/modules/control_allocator/module.yaml
 @@ -592,6 +592,34 @@ parameters:
@@ -315,7 +315,7 @@ index 99d0d5e..863a073 100644
  mixer:
      actuator_types:
 diff --git a/src/modules/logger/logged_topics.cpp b/src/modules/logger/logged_topics.cpp
-index 1d9362b..11bda15 100644
+index 1d9362bf5c..11bda15f45 100644
 --- a/src/modules/logger/logged_topics.cpp
 +++ b/src/modules/logger/logged_topics.cpp
 @@ -106,6 +106,7 @@ void LoggedTopics::add_default_topics()
@@ -327,10 +327,10 @@ index 1d9362b..11bda15 100644
  	add_optional_topic("rover_attitude_status", 100);
  	add_optional_topic("rover_position_setpoint", 100);
 diff --git a/src/modules/uxrce_dds_client/dds_topics.yaml b/src/modules/uxrce_dds_client/dds_topics.yaml
-index 41f44e6..7d55b98 100644
+index e879f80451..4cbbcd8a27 100644
 --- a/src/modules/uxrce_dds_client/dds_topics.yaml
 +++ b/src/modules/uxrce_dds_client/dds_topics.yaml
-@@ -67,6 +67,9 @@ publications:
+@@ -71,6 +71,9 @@ publications:
    - topic: /fmu/out/vehicle_command_ack
      type: px4_msgs::msg::VehicleCommandAck
  
@@ -341,5 +341,5 @@ index 41f44e6..7d55b98 100644
      type: px4_msgs::msg::VehicleGlobalPosition
      rate_limit: 50.
 -- 
-2.53.0
+2.34.1
 

@@ -68,7 +68,9 @@ source "$PX4_WS/install/setup.bash"
 [[ -f "$WS_DIR/install/setup.bash" ]] && source "$WS_DIR/install/setup.bash"
 ros2 daemon stop >/dev/null 2>&1 || true
 
-export __NV_PRIME_RENDER_OFFLOAD=1 __GLX_VENDOR_LIBRARY_NAME=nvidia __VK_LAYER_NV_optimus=NVIDIA_only
+if command -v nvidia-smi >/dev/null 2>&1; then
+  export __NV_PRIME_RENDER_OFFLOAD=1 __GLX_VENDOR_LIBRARY_NAME=nvidia __VK_LAYER_NV_optimus=NVIDIA_only
+fi
 # extra world/model packages: add them to GZ_SIM_RESOURCE_PATH before running
 export GZ_SIM_RESOURCE_PATH="$PX4_DIR/Tools/simulation/gz/models:$PX4_DIR/Tools/simulation/gz/worlds:${GZ_SIM_RESOURCE_PATH:-}"
 
@@ -115,7 +117,7 @@ sleep 2
 echo "[2/5] PX4 SITL + Gazebo ($MODEL_INSTANCE in $WORLD at $UAV_POSE, partition $GZ_PARTITION)"
 ( cd "$PX4_DIR" && \
     unset PX4_GZ_STANDALONE && \
-    unset HEADLESS && \
+    { [[ "$HEADLESS" -eq 1 ]] && export HEADLESS=1 || unset HEADLESS; } && \
     PX4_SYS_AUTOSTART=4022 \
     PX4_GZ_MODEL_POSE="$UAV_POSE" \
     PX4_SIM_MODEL="gz_$MODEL" PX4_GZ_WORLD="$WORLD" \
@@ -125,15 +127,18 @@ for i in $(seq 1 60); do
   ros2 topic list 2>/dev/null | grep -q '/fmu/out/vehicle_attitude' && break; sleep 1
 done
 
-echo "[3/5] ros_gz_bridge (directional GZ->ROS for $MODEL_INSTANCE)"
+echo "[3/5] ros_gz_bridge (clock and camera bridges for $MODEL_INSTANCE)"
+ros2 run ros_gz_bridge parameter_bridge \
+  "/world/$WORLD/clock@rosgraph_msgs/msg/Clock[gz.msgs.Clock" \
+  --ros-args -r "/world/$WORLD/clock:=/clock" \
+  >"$LOGS/clock_bridge.log" 2>&1 & pids+=($!)
+
 ros2 run ros_gz_bridge parameter_bridge \
   "/world/$WORLD/model/${MODEL_INSTANCE}/link/camera_link/sensor/IMX214/image@sensor_msgs/msg/Image[gz.msgs.Image" \
   "/world/$WORLD/model/${MODEL_INSTANCE}/link/camera_link/sensor/IMX214/camera_info@sensor_msgs/msg/CameraInfo[gz.msgs.CameraInfo" \
   "/depth_camera@sensor_msgs/msg/Image[gz.msgs.Image" \
   "/depth_camera/points@sensor_msgs/msg/PointCloud2[gz.msgs.PointCloudPacked" \
-  "/world/$WORLD/clock@rosgraph_msgs/msg/Clock[gz.msgs.Clock" \
   --ros-args \
-  -r "/world/$WORLD/clock:=/clock" \
   -r "/world/$WORLD/model/${MODEL_INSTANCE}/link/camera_link/sensor/IMX214/image:=/uav/rgb" \
   -r "/world/$WORLD/model/${MODEL_INSTANCE}/link/camera_link/sensor/IMX214/camera_info:=/uav/camera_info" \
   -r "/depth_camera:=/uav/depth" \

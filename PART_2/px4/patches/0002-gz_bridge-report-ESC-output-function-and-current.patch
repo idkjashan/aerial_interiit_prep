@@ -1,4 +1,4 @@
-From f9df710516cdf5c475927bac943c2e5cb32f167c Mon Sep 17 00:00:00 2001
+From 4c59fde6f9c661ccda0c77c126582ec29ab2ae7f Mon Sep 17 00:00:00 2001
 From: idkjashan <jashanpreetsinghbrar01@gmail.com>
 Date: Fri, 18 Sep 2026 10:20:26 +0000
 Subject: [PATCH 2/2] gz_bridge: report ESC output function and current
@@ -11,7 +11,7 @@ effect in SITL. Fill both in (current is a simple speed^2 stand-in).
  1 file changed, 9 insertions(+)
 
 diff --git a/src/modules/simulation/gz_bridge/GZMixingInterfaceESC.cpp b/src/modules/simulation/gz_bridge/GZMixingInterfaceESC.cpp
-index f556817..b11080d 100644
+index f556817ea9..b11080d301 100644
 --- a/src/modules/simulation/gz_bridge/GZMixingInterfaceESC.cpp
 +++ b/src/modules/simulation/gz_bridge/GZMixingInterfaceESC.cpp
 @@ -116,6 +116,15 @@ void GZMixingInterfaceESC::motorSpeedCallback(const gz::msgs::Actuators &actuato
@@ -31,5 +31,5 @@ index f556817..b11080d 100644
  			esc_status.esc_armed_flags |= 1 << i;
  		}
 -- 
-2.53.0
+2.34.1
 

@@ -20,12 +20,15 @@ and switch to a zero-velocity setpoint, which keeps OFFBOARD alive on a signal t
 estimator can still support, then return to position hold once vision recovers. We
 never disarm and never fight a failsafe that PX4 itself raised.
 """
+import math
 import numpy as np
 import rclpy
 from rclpy.node import Node
 from std_msgs.msg import Bool, Int32, String
+from geometry_msgs.msg import Twist
 from px4_msgs.msg import (OffboardControlMode, TrajectorySetpoint, VehicleCommand,
-                          VehicleCommandAck, VehicleStatus, VehicleLocalPosition)
+                          VehicleCommandAck, VehicleStatus, VehicleLocalPosition,
+                          VehicleAttitude)
 
 from .qos import px4_sub_qos, px4_pub_qos
 
@@ -74,14 +77,27 @@ class OffboardMission(Node):
         self.hold_samples = 0
         self.hold_violations = 0
         self.last_xy_reset_counter = None
+        self.last_vo_health_rx = None
+
+        # Teleop (/cmd_vel) support
+        self.yaw = 0.0
+        self.cmd_linear = [0.0, 0.0, 0.0]
+        self.cmd_yaw_rate = 0.0
+        self.last_cmd_vel_rx = None
+        self.teleop_active = False
 
         q = px4_sub_qos(g('px4_durability'))
         self.create_subscription(Bool, '/uav_vision_health/ready_to_arm',
                                  lambda m: setattr(self, 'ready', bool(m.data)), 10)
         self.create_subscription(String, '/uav_visual_odometry/health',
-                                 lambda m: setattr(self, 'vo_health', m.data), 10)
+                                 self._on_health, 10)
         self.create_subscription(Int32, '/uav_visual_odometry/quality',
                                  lambda m: setattr(self, 'quality', int(m.data)), 10)
+        self.create_subscription(Twist, '/cmd_vel', self._on_cmd_vel, 10)
+        self.create_subscription(VehicleAttitude, '/fmu/out/vehicle_attitude',
+                                 self._on_att, q)
+        self.create_subscription(VehicleAttitude, '/fmu/out/vehicle_attitude_v1',
+                                 self._on_att, q)
         self.create_subscription(VehicleStatus, '/fmu/out/vehicle_status',
                                  lambda m: setattr(self, 'status', m), q)
         self.create_subscription(VehicleStatus, '/fmu/out/vehicle_status_v1',
@@ -127,6 +143,21 @@ class OffboardMission(Node):
                     f'EKF2 XY reset: adjusted hold_origin by [{dx:.3f}, {dy:.3f}]')
         self.last_xy_reset_counter = m.xy_reset_counter
         self.lpos = m
+
+    def _on_health(self, msg):
+        self.vo_health = msg.data
+        self.last_vo_health_rx = self.get_clock().now()
+
+    def _on_att(self, msg):
+        q = msg.q  # w, x, y, z in NED/FRD
+        # yaw in NED (North=0, CW positive)
+        self.yaw = math.atan2(2.0 * (q[0] * q[3] + q[1] * q[2]),
+                              1.0 - 2.0 * (q[2] ** 2 + q[3] ** 2))
+
+    def _on_cmd_vel(self, msg):
+        self.cmd_linear = [msg.linear.x, msg.linear.y, msg.linear.z]
+        self.cmd_yaw_rate = msg.angular.z
+        self.last_cmd_vel_rx = self.get_clock().now()
 
     # ------------------------------------------------------------- utilities
     def _cmd(self, command, **params):
@@ -181,7 +212,9 @@ class OffboardMission(Node):
     # ------------------------------------------------------------ state machine
     def _tick(self):
         now = self.get_clock().now()
-        vision_bad = self.vo_health == 'LOST'
+        dt_health = ((now - self.last_vo_health_rx).nanoseconds * 1e-9
+                     if self.last_vo_health_rx is not None else 999.0)
+        vision_bad = (self.vo_health == 'LOST') or (dt_health > 0.5)
 
         if self.state == WAIT_HEALTH:
             self._heartbeat()
@@ -230,8 +263,23 @@ class OffboardMission(Node):
                 elif self.recovered_since is None:
                     self.recovered_since = now
                 elif (now - self.recovered_since).nanoseconds * 1e-9 > self.degraded_grace:
-                    self.get_logger().info('vision recovered -> resuming position hold')
+                    self.get_logger().info('vision recovered -> resuming position hold and re-requesting OFFBOARD')
                     self.state = HOLD if self.hold_start else TAKEOFF
+                    self._cmd(VehicleCommand.VEHICLE_CMD_DO_SET_MODE, param1=1.0, param2=6.0)
+                    self.mode_requested_at = now
+
+        if self.state in (TAKEOFF, HOLD):
+            if not self.armed:
+                if self.arm_requested_at is None or (now - self.arm_requested_at).nanoseconds * 1e-9 >= 1.0:
+                    self.get_logger().warn('Vehicle disarmed in TAKEOFF/HOLD -> requesting re-arm')
+                    self._cmd(VehicleCommand.VEHICLE_CMD_COMPONENT_ARM_DISARM, param1=1.0)
+                    self.arm_requested_at = now
+            if not self.offboard:
+                if self.mode_requested_at is None or (now - self.mode_requested_at).nanoseconds * 1e-9 >= 1.0:
+                    self.get_logger().warn(
+                        f'In {STATE_NAMES[self.state]} but not in OFFBOARD (nav_state={getattr(self.status, "nav_state", "none")}) -> requesting OFFBOARD')
+                    self._cmd(VehicleCommand.VEHICLE_CMD_DO_SET_MODE, param1=1.0, param2=6.0)
+                    self.mode_requested_at = now
 
         if self.state == DEGRADED:
             self._heartbeat(position=False, velocity=True)
@@ -251,6 +299,47 @@ class OffboardMission(Node):
             return
 
         if self.state == HOLD:
+            # Check if teleop /cmd_vel is active
+            teleop_cmd_recent = (
+                self.last_cmd_vel_rx is not None and
+                (now - self.last_cmd_vel_rx).nanoseconds * 1e-9 < 0.8
+            )
+            has_velocity = any(abs(v) > 0.01 for v in self.cmd_linear) or abs(self.cmd_yaw_rate) > 0.01
+
+            if teleop_cmd_recent and has_velocity:
+                if not self.teleop_active:
+                    self.get_logger().info('Teleop engaged via /cmd_vel')
+                    self.teleop_active = True
+                # Body FLU to world NED
+                vx_body, vy_body, vz_body = self.cmd_linear
+                cos_y = math.cos(self.yaw)
+                sin_y = math.sin(self.yaw)
+                vx_frd = vx_body
+                vy_frd = -vy_body
+                vz_ned = -vz_body
+                vx_ned = cos_y * vx_frd - sin_y * vy_frd
+                vy_ned = sin_y * vx_frd + cos_y * vy_frd
+
+                self._heartbeat(position=False, velocity=True)
+                m = TrajectorySetpoint()
+                m.timestamp = int(now.nanoseconds / 1000)
+                m.position = [float('nan')] * 3
+                m.velocity = [float(vx_ned), float(vy_ned), float(vz_ned)]
+                m.acceleration = [float('nan')] * 3
+                m.yaw = float('nan')
+                m.yawspeed = float(-self.cmd_yaw_rate)
+                self.pub_sp.publish(m)
+                return
+
+            if self.teleop_active:
+                self.teleop_active = False
+                if self.lpos is not None:
+                    self.hold_origin = np.array([self.lpos.x, self.lpos.y])
+                    self.alt = float(-self.lpos.z)
+                self.get_logger().info(
+                    f'Teleop released -> locking hover at ({self.hold_origin[0]:.2f}, '
+                    f'{self.hold_origin[1]:.2f}, {-self.alt:.2f} m)')
+
             self._heartbeat()
             tgt = [float(self.hold_origin[0]), float(self.hold_origin[1]), -self.alt]
             self._setpoint_position(tgt)

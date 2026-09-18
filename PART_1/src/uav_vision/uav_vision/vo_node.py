@@ -115,7 +115,9 @@ class VoNode(Node):
         self.pub_health = self.create_publisher(String, '~/health', 10)
         self.pub_alt = self.create_publisher(Float32, '~/agl', 10)
         self.pub_diag = self.create_publisher(DiagnosticArray, '/diagnostics', 10)
+        self.last_rx_wall = None
         self.create_timer(1.0, self._report)
+        self.create_timer(0.1, self._watchdog)
         self.get_logger().info('visual odometry node up; waiting for camera_info + attitude')
 
     # ------------------------------------------------------------ callbacks
@@ -151,6 +153,7 @@ class VoNode(Node):
             self.last_stamp = t
             return
         self.last_stamp = t
+        self.last_rx_wall = self.get_clock().now()
 
         try:
             rgb = image_to_np(rgb_msg)
@@ -247,6 +250,15 @@ class VoNode(Node):
             f'frames={self.frames} feat={self.vo.n_tracked} '
             f'health={health_name(self.vo.health)} latency={self.lat_ms:.1f} ms')
         self.frames = 0
+
+    def _watchdog(self):
+        if self.vo is None or self.last_rx_wall is None:
+            return
+        age = (self.get_clock().now() - self.last_rx_wall).nanoseconds * 1e-9
+        if age > 0.4:
+            self.vo.health = HEALTH_LOST
+            self.pub_health.publish(String(data=health_name(HEALTH_LOST)))
+            self.pub_quality.publish(Int32(data=0))
 
 
 def main(args=None):

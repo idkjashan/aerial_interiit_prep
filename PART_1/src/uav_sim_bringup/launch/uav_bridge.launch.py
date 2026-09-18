@@ -16,29 +16,41 @@ def launch_setup(context, *args, **kwargs):
     gz_depth_points = '/depth_camera/points'
     gz_clock = f'/world/{world}/clock'
 
-    bridge_args = [
+    clock_bridge_args = [
+        f'{gz_clock}@rosgraph_msgs/msg/Clock[gz.msgs.Clock',
+        '--ros-args',
+        '-r', f'{gz_clock}:=/clock',
+    ]
+
+    camera_bridge_args = [
         f'{gz_rgb_image}@sensor_msgs/msg/Image[gz.msgs.Image',
         f'{gz_rgb_info}@sensor_msgs/msg/CameraInfo[gz.msgs.CameraInfo',
         f'{gz_depth_image}@sensor_msgs/msg/Image[gz.msgs.Image',
         f'{gz_depth_points}@sensor_msgs/msg/PointCloud2[gz.msgs.PointCloudPacked',
-        f'{gz_clock}@rosgraph_msgs/msg/Clock[gz.msgs.Clock',
         '--ros-args',
         '-r', f'{gz_rgb_image}:=/uav/rgb',
         '-r', f'{gz_rgb_info}:=/uav/camera_info',
         '-r', f'{gz_depth_image}:=/uav/depth',
         '-r', f'{gz_depth_points}:=/uav/points',
-        '-r', f'{gz_clock}:=/clock',
     ]
 
-    bridge_node = Node(
+    clock_node = Node(
+        package='ros_gz_bridge',
+        executable='parameter_bridge',
+        name='uav_clock_bridge',
+        output='screen',
+        arguments=clock_bridge_args,
+    )
+
+    camera_node = Node(
         package='ros_gz_bridge',
         executable='parameter_bridge',
         name='uav_camera_bridge',
         output='screen',
-        arguments=bridge_args,
+        arguments=camera_bridge_args,
     )
 
-    return [bridge_node]
+    return [clock_node, camera_node]
 
 
 def generate_launch_description():

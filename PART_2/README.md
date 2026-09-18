@@ -197,14 +197,20 @@ To see the topic from ROS 2, copy `px4/msg/RotorEffectiveness.msg` into
 
 | level | altitude loss | max tilt | max yaw rate | motor 1 at end | outcome |
 |---|---|---|---|---|---|
-| 100 % | | | | | |
-| 75 % | | | | | |
-| 50 % | | | | | |
-| 25 % | | | | | |
-| 0 % | | | | | |
-| built-in (motor off) | | | | | |
+| 100 % | 0.0 m | 0° | 0°/s | 0.73 | holds |
+| 75 % | 0.0 m | 7° | 10°/s | 0.73 | holds after a short transient |
+| 50 % | 0.0 m | 17° | 48°/s | 0.75 | holds after a transient |
+| 25 % | 19.7 m (ground) | 25° | 35°/s | 0.61 | came down upright, ground after 3.6 s |
+| 0 % | 19.4 m (ground) | 179° (tumbles) | 190°/s | 0.00 (idle) | tumbles, ground after 2.2 s |
+| built-in (motor off) | 22.0 m (ground) | 179° (tumbles) | 1075°/s | 0.00 (stopped) | tumbles, ground after 2.1 s |
 
-Figures: `logs/`.
+Figures: `logs/` (individual event plots in `logs/sweep/results/`, `logs/zero/results/`, `logs/reference/results/`, and `logs/compare.png`).
+
+Comparison with model prediction:
+- 100 %, 75 % and 50 % hold hover with 0 m altitude loss. Gazebo exhibits slightly larger transients (7° vs 5° at 75 %; 17° / 48°/s vs 10° / 17°/s at 50 %) due to real sensor noise, EKF estimation delay, and actuator response dynamics not present in the simplified model.
+- At 25 % the vehicle cannot produce sufficient collective thrust to hover while counteracting the asymmetry; it remains upright (max tilt 25°) and reaches the ground in 3.6 s (model predicted 3.9 s at 15° tilt).
+- At 0 % the vehicle tumbles and hits the ground in 2.2 s (model predicted 2.3 s).
+- Built-in failure handling reaches the ground in 2.1 s (model predicted 2.2 s), within 0.1 s of complete loss (0 %), while experiencing violent spin (1075°/s) during the descent due to zero thrust on motor 1 vs idle spin in 0 %.
 
 ### Model prediction
 
